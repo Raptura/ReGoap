@@ -12,5 +12,10 @@ namespace ReGoap.Unity.Test
         {
             state.Set(key, value);
         }
+
+        public void SetStructValue(string key, ReGoap.Core.StructValue sv )
+        {
+            state.SetStructValue(key, sv);
+        }
     }
 }

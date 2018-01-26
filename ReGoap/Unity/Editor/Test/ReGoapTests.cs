@@ -9,12 +9,12 @@ namespace ReGoap.Unity.Editor.Test
 {
     public class ReGoapTests
     {
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public void Init()
         {
         }
 
-        [TestFixtureTearDown]
+        [OneTimeTearDown]
         public void Dispose()
         {
         }
@@ -31,6 +31,12 @@ namespace ReGoap.Unity.Editor.Test
         public void TestSimpleChainedPlan()
         {
             TestSimpleChainedPlan(GetPlanner());
+        }
+
+        [Test]
+        public void TestPlan2()
+        {
+            TestPlan2(GetPlanner());
         }
 
         [Test]
@@ -139,6 +145,33 @@ namespace ReGoap.Unity.Editor.Test
             var plan = planner.Plan(agent, null, null, null);
 
             Assert.That(plan, Is.EqualTo(hasAxeGoal));
+            // validate plan actions
+            ReGoapTestsHelper.ApplyAndValidatePlan(plan, memory);
+        }
+
+        public void TestPlan2(IGoapPlanner<string, object> planner)
+        {
+            var gameObject = new GameObject();
+
+            ReGoapTestsHelper.GetCustomAction(gameObject, "Mine Ore",
+                new Dictionary<string, object> { },
+                new Dictionary<string, object> { { "hasMoney", true } }, 10);
+            ReGoapTestsHelper.GetCustomAction(gameObject, "Buy Food",
+                new Dictionary<string, object> { { "hasMoney", true } },
+                new Dictionary<string, object> { { "hasFood", true }, { "hasMoney", false} }, 2);
+            
+            var theGoal = ReGoapTestsHelper.GetCustomGoal(gameObject, "PrepareFoodAndMoney",
+                new Dictionary<string, object> { { "hasMoney", true }, { "hasFood", true } });
+
+            var memory = gameObject.AddComponent<ReGoapTestMemory>();
+            memory.Init();
+
+            var agent = gameObject.AddComponent<ReGoapTestAgent>();
+            agent.Init();
+
+            var plan = planner.Plan(agent, null, null, null);
+
+            Assert.That(plan, Is.EqualTo(theGoal));
             // validate plan actions
             ReGoapTestsHelper.ApplyAndValidatePlan(plan, memory);
         }

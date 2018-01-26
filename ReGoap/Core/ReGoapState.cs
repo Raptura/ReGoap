@@ -6,16 +6,16 @@ namespace ReGoap.Core
     public class ReGoapState<T, W>
     {
         // can change to object
-        private Dictionary<T, W> values;
-        private readonly Dictionary<T, W> bufferA;
-        private readonly Dictionary<T, W> bufferB;
+        private Dictionary<T, StructValue > values;
+        private readonly Dictionary<T, StructValue> bufferA;
+        private readonly Dictionary<T, StructValue> bufferB;
 
         public static int DefaultSize = 20;
 
         private ReGoapState()
         {
-            bufferA = new Dictionary<T, W>(DefaultSize);
-            bufferB = new Dictionary<T, W>(DefaultSize);
+            bufferA = new Dictionary<T, StructValue>(DefaultSize);
+            bufferB = new Dictionary<T, StructValue>(DefaultSize);
             values = bufferA;
         }
 
@@ -28,103 +28,151 @@ namespace ReGoap.Core
                 {
                     foreach (var pair in old.values)
                     {
-                        values[pair.Key] = pair.Value;
+                        values[pair.Key] = pair.Value; //just copy is enough, we're using struct here
                     }
                 }
             }
         }
 
-        public static ReGoapState<T, W> operator +(ReGoapState<T, W> a, ReGoapState<T, W> b)
-        {
-            ReGoapState<T, W> result;
-            lock (a.values)
-            {
-                result = Instantiate(a);
-            }
-            lock (b.values)
-            {
-                foreach (var pair in b.values)
-                    result.values[pair.Key] = pair.Value;
-                return result;
-            }
-        }
+        //public static ReGoapState<T, W> operator +(ReGoapState<T, W> a, ReGoapState<T, W> b)
+        //{
+        //    ReGoapState<T, W> result;
+        //    lock (a.values)
+        //    {
+        //        result = Instantiate(a);
+        //    }
+        //    lock (b.values)
+        //    {
+        //        foreach (var pair in b.values)
+        //            result.values[pair.Key] = pair.Value;
+        //        return result;
+        //    }
+        //}
 
         public void AddFromState(ReGoapState<T, W> b)
         {
             lock (values) lock (b.values)
-            {
-                foreach (var pair in b.values)
-                    values[pair.Key] = pair.Value;
-            }
+                {
+                    foreach (var pair in b.values)
+                    {
+                        StructValue thisValue;
+                        if( values.TryGetValue(pair.Key, out thisValue) )
+                        {
+                            values[pair.Key] = thisValue.MergeWith(pair.Value);
+                        }
+                        else
+                        {
+                            values[pair.Key] = pair.Value;
+                        }
+                        
+                    }
+                }
         }
 
         public int Count
         {
             get { return values.Count; }
         }
-        public bool HasAny(ReGoapState<T, W> other)
+
+        ///// <summary>
+        ///// If this and other share the same key
+        ///// </summary>
+        //public bool HasAny(ReGoapState<T, W> other)
+        //{
+        //    lock (values) lock (other.values)
+        //    {
+        //        foreach (var pair in other.values)
+        //        {
+        //            StructValue thisValue;
+        //            values.TryGetValue(pair.Key, out thisValue);
+        //            if (Equals(thisValue, pair.Value))
+        //                return true;
+        //        }
+        //        return false;
+        //    }
+        //}
+
+        /// <summary>
+        /// if anything belongs to self that is also in goal, is better than curState, then return true 
+        /// </summary>
+        public bool HasAnyGoodForGoal(ReGoapState<T, W> curState, ReGoapState<T, W> goal)
         {
-            lock (values) lock (other.values)
+            lock(values)
+            lock (goal.values)
+            lock (curState)
             {
-                foreach (var pair in other.values)
+                foreach(var pair in goal.values)
                 {
-                    W thisValue;
-                    values.TryGetValue(pair.Key, out thisValue);
-                    if (Equals(thisValue, pair.Value))
-                        return true;
+                    StructValue thisValue;
+                    StructValue curValue;
+                    if (values.TryGetValue(pair.Key, out thisValue))
+                    {
+                        if (!curState.values.TryGetValue(pair.Key, out curValue))
+                            return true;
+                        if (thisValue.IsBetter(curValue, pair.Value))
+                            return true;
+                    }
                 }
                 return false;
             }
         }
-        public bool HasAnyConflict(ReGoapState<T, W> other) // used only in backward for now
-        {
-            lock (values) lock (other.values)
-                {
-                    foreach (var pair in other.values)
-                    {
-                        W thisValue;
-                        values.TryGetValue(pair.Key, out thisValue);
-                        var otherValue = pair.Value;
-                        if (otherValue == null || Equals(otherValue, false))
-                            continue;
-                        if (thisValue != null && !Equals(otherValue, thisValue))
-                            return true;
-                    }
-                    return false;
-                }
-        }
 
-        // this method is more relaxed than the other, also accepts conflits that are fixed by "changes"
-        public bool HasAnyConflict(ReGoapState<T, W> changes, ReGoapState<T, W> other) // used only in backward for now
-        {
-            lock (values) lock (other.values)
-                {
-                    foreach (var pair in other.values)
-                    {
-                        W thisValue;
-                        values.TryGetValue(pair.Key, out thisValue);
-                        W effectValue;
-                        changes.values.TryGetValue(pair.Key, out effectValue);
-                        var otherValue = pair.Value;
-                        if (otherValue == null || Equals(otherValue, false))
-                            continue;
-                        if (thisValue != null && !Equals(otherValue, thisValue) && !Equals(effectValue, thisValue))
-                            return true;
-                    }
-                    return false;
-                }
-        }
 
-        public int MissingDifference(ReGoapState<T, W> other, int stopAt = int.MaxValue)
+        //public bool HasAnyConflict(ReGoapState<T, W> other) // used only in backward for now
+        //{
+        //    lock (values) lock (other.values)
+        //        {
+        //            foreach (var pair in other.values)
+        //            {
+        //                W thisValue;
+        //                values.TryGetValue(pair.Key, out thisValue);
+        //                var otherValue = pair.Value;
+        //                if (otherValue == null || Equals(otherValue, false))
+        //                    continue;
+        //                if (thisValue != null && !Equals(otherValue, thisValue))
+        //                    return true;
+        //            }
+        //            return false;
+        //        }
+        //}
+
+        //// this method is more relaxed than the other, also accepts conflits that are fixed by "changes"
+        //public bool HasAnyConflict(ReGoapState<T, W> changes, ReGoapState<T, W> other) // used only in backward for now
+        //{
+        //    lock (values) lock (other.values)
+        //        {
+        //            foreach (var pair in other.values)
+        //            {
+        //                W thisValue;
+        //                values.TryGetValue(pair.Key, out thisValue);
+        //                W effectValue;
+        //                changes.values.TryGetValue(pair.Key, out effectValue);
+        //                var otherValue = pair.Value;
+        //                if (otherValue == null || Equals(otherValue, false))
+        //                    continue;
+        //                if (thisValue != null && !Equals(otherValue, thisValue) && !Equals(effectValue, thisValue))
+        //                    return true;
+        //            }
+        //            return false;
+        //        }
+        //}
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public int MissingDifference(ReGoapState<T, W> curState, int stopAt = int.MaxValue)
         {
             lock (values)
             {
                 var count = 0;
                 foreach (var pair in values)
                 {
-                    W otherValue;
-                    other.values.TryGetValue(pair.Key, out otherValue);
-                    if (!Equals(pair.Value, otherValue))
+                    StructValue precondValue = pair.Value;
+                    StructValue curValue;
+                    if (
+                        !curState.values.TryGetValue(pair.Key, out curValue) ||  //current-state doesn't have corresponding entry for this precond
+                        !precondValue.IsFulfilledBy(curValue)  //current-state doesn't fullfil this precond
+                       )
                     {
                         count++;
                         if (count >= stopAt)
@@ -135,21 +183,26 @@ namespace ReGoap.Core
             }
         }
 
-        // write differences in "difference"
-        public int MissingDifference(ReGoapState<T, W> other, ref ReGoapState<T, W> difference, int stopAt = int.MaxValue, Func<KeyValuePair<T, W>, W, bool> predicate = null, bool test = false)
+        /// <summary>
+        /// write into 'difference', anything in 'this' and not fulfilled by 'other'
+        /// </summary>
+        public int MissingDifference(ReGoapState<T, W> other, ref ReGoapState<T, W> difference, int stopAt = int.MaxValue)
         {
             lock (values)
             {
                 var count = 0;
                 foreach (var pair in values)
                 {
-                    W otherValue;
-                    other.values.TryGetValue(pair.Key, out otherValue);
-                    if (!Equals(pair.Value, otherValue) && (predicate == null || predicate(pair, otherValue)))
+                    StructValue thisValue = pair.Value;
+                    StructValue otherValue;
+                    if( 
+                        ! other.values.TryGetValue(pair.Key, out otherValue)  || //not exist in other
+                        ! thisValue.IsFulfilledBy(otherValue)  //not fulfilled by other
+                      )                      
                     {
                         count++;
                         if (difference != null)
-                            difference.values[pair.Key] = pair.Value;
+                            difference.values[pair.Key] = thisValue;
                         if (count >= stopAt)
                             break;
                     }
@@ -169,12 +222,15 @@ namespace ReGoap.Core
                 values.Clear();
                 foreach (var pair in buffer)
                 {
-                    W otherValue;
-                    other.values.TryGetValue(pair.Key, out otherValue);
-                    if (!Equals(pair.Value, otherValue) && (predicate == null || predicate(pair, otherValue)))
+                    StructValue thisValue = pair.Value;
+                    StructValue otherValue;
+                    if( 
+                        ! other.values.TryGetValue(pair.Key, out otherValue) ||
+                        ! thisValue.IsFulfilledBy(otherValue)
+                      )
                     {
                         count++;
-                        values[pair.Key] = pair.Value;
+                        values[pair.Key] = thisValue;
                         if (count >= stopAt)
                             break;
                     }
@@ -242,7 +298,7 @@ namespace ReGoap.Core
             {
                 if (!values.ContainsKey(key))
                     return default(W);
-                return values[key];
+                return (W)values[key].v;
             }
         }
 
@@ -250,7 +306,15 @@ namespace ReGoap.Core
         {
             lock (values)
             {
-                values[key] = value;
+                values[key] = StructValue.Create(value);
+            }
+        }
+
+        public void SetStructValue(T key, StructValue st)
+        {
+            lock(values)
+            {
+                values[key] = st;
             }
         }
 
@@ -262,7 +326,7 @@ namespace ReGoap.Core
             }
         }
 
-        public Dictionary<T, W> GetValues()
+        public Dictionary<T, StructValue> GetValues()
         {
             lock (values)
                 return values;
@@ -279,5 +343,138 @@ namespace ReGoap.Core
             lock (values)
                 values.Clear();
         }
+
+
+        
     }
+
+
+    /// <summary>
+    /// contains the value & optional merge & match ops
+    /// </summary>
+    public struct StructValue
+    {
+        public object v;
+        public Func<StructValue, StructValue, StructValue> mergeOp; //used for AddFromState
+        public Func<StructValue, StructValue, bool> isFulfilledByOP; //used for precondition check
+        public Func<StructValue, StructValue, StructValue, bool> isBetterOp; // <this, that, target>, this op return true iff 'this' is nearer to 'target' than 'that'
+
+        public static StructValue Create(object v)
+        {
+            return Create(v, S_ReplaceMergeOP, S_EqualIsFulFilledByOP, S_DefIsBetterOP);
+        }
+        public static StructValue CreateIntArithmetic(int v)
+        {
+            return Create(v, S_IntAdd_MergeOP, S_IntLessEqual_IsFulfilledByOP, S_Int_IsBetterOP);
+        }
+        public static StructValue CreateFloatArithmetic(float v)
+        {
+            return Create(v, S_FloatAdd_MergeOP, S_FloatLessEqual_IsFulfilledByOP, S_Float_IsBetterOP);
+        }
+        public static StructValue Create(object v,
+            Func<StructValue, StructValue, StructValue> mergeOp,
+            Func<StructValue, StructValue, bool> isFulFilledByOP,
+            Func<StructValue, StructValue, StructValue, bool> isBetterOp)
+        {
+            var o = new StructValue();
+            o.v = v;
+            o.mergeOp = mergeOp;
+            o.isFulfilledByOP = isFulFilledByOP;
+            o.isBetterOp = isBetterOp;
+            return o;
+        }
+
+        //public static implicit operator W(StructValue st)
+        //{
+        //    return (W)st.v;
+        //}
+
+        public StructValue MergeWith(StructValue other)
+        {
+            var newOne = mergeOp(this, other);
+            return newOne;
+        }
+
+        public bool IsFulfilledBy(StructValue other)
+        {
+            return isFulfilledByOP(this, other);
+        }
+
+        public bool IsBetter(StructValue other, StructValue target)
+        {
+            return isBetterOp(this, other, target);
+        }
+
+        #region "default OPs"
+        public static StructValue ReplaceMergeOP(StructValue self, StructValue other)
+        {
+            return other;
+        }
+
+        public static bool EqualMatchOP(StructValue self, StructValue other)
+        {
+            return Equals(self.v, other.v);
+        }
+
+        public static bool DefaultIsBetterOP(StructValue self, StructValue other, StructValue target)
+        {
+            return Equals(self.v, target.v);
+        }
+
+        public static readonly Func<StructValue, StructValue, StructValue> S_ReplaceMergeOP = ReplaceMergeOP;
+        public static readonly Func<StructValue, StructValue, bool> S_EqualIsFulFilledByOP = EqualMatchOP;
+        public static readonly Func<StructValue, StructValue, StructValue, bool> S_DefIsBetterOP = DefaultIsBetterOP;
+        #endregion "default OPs"
+
+        #region "Arithmetic OPs"
+
+        public static StructValue IntAdd_MergeOP(StructValue self, StructValue other)
+        {
+            StructValue newOne = StructValue.CreateIntArithmetic(Convert.ToInt32(self.v) + Convert.ToInt32(other.v));
+            return newOne;
+        }
+        public static bool IntLessEqual_IsFulfilledByOP(StructValue self, StructValue other)
+        {
+            return Convert.ToInt32(self.v) <= Convert.ToInt32(other.v);
+        }
+        public static bool Int_IsBetterOP(StructValue self, StructValue other, StructValue target)
+        {
+            int vSelf = Convert.ToInt32(self.v);
+            int vOther = Convert.ToInt32(other.v);
+            int vTarget = Convert.ToInt32(target.v);
+
+            return Math.Abs(vSelf + vOther - vTarget) < Math.Abs(vOther - vTarget);
+        }
+
+        public static readonly Func<StructValue, StructValue, StructValue> S_IntAdd_MergeOP = IntAdd_MergeOP;
+        public static readonly Func<StructValue, StructValue, bool> S_IntLessEqual_IsFulfilledByOP = IntLessEqual_IsFulfilledByOP;
+        public static readonly Func<StructValue, StructValue, StructValue, bool> S_Int_IsBetterOP = Int_IsBetterOP;
+
+        public static StructValue FloatAdd_MergeOP(StructValue self, StructValue other)
+        {
+            StructValue newOne = StructValue.CreateFloatArithmetic(Convert.ToSingle(self.v) + Convert.ToSingle(other.v));
+            return newOne;
+        }
+
+        public static bool FloatLessEqual_IsFulfilledByOP(StructValue self, StructValue other)
+        {
+            return Convert.ToSingle(self.v) <= Convert.ToSingle(other.v);
+        }
+
+        public static bool Float_IsBetterOP(StructValue self, StructValue other, StructValue target)
+        {
+            float vSelf = Convert.ToSingle(self.v);
+            float vOther = Convert.ToSingle(other.v);
+            float vTarget = Convert.ToSingle(target.v);
+
+            return Math.Abs(vSelf + vOther - vTarget) < Math.Abs(vOther - vTarget);
+        }
+
+        public static readonly Func<StructValue, StructValue, StructValue> S_FloatAdd_MergeOP = FloatAdd_MergeOP;
+        public static readonly Func<StructValue, StructValue, bool> S_FloatLessEqual_IsFulfilledByOP = FloatLessEqual_IsFulfilledByOP;
+        public static readonly Func<StructValue, StructValue, StructValue, bool> S_Float_IsBetterOP = Float_IsBetterOP;
+
+        #endregion "Arithmetic OPs"
+    }
+
 }

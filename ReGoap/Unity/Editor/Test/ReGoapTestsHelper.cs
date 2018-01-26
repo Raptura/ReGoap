@@ -17,13 +17,29 @@ namespace ReGoap.Unity.Editor.Test
             customAction.Name = name;
             customAction.Init();
             foreach (var pair in effectsBools)
-                effects.Set(pair.Key, pair.Value);
+                _AddIntoReGoapState(effects, pair.Key, pair.Value);
             customAction.SetEffects(effects);
             foreach (var pair in preconditionsBools)
-                preconditions.Set(pair.Key, pair.Value);
+                _AddIntoReGoapState(preconditions, pair.Key, pair.Value);
             customAction.SetPreconditions(preconditions);
             customAction.Cost = cost;
             return customAction;
+        }
+
+        private static void _AddIntoReGoapState(ReGoapState<string, object> st, string key, object v)
+        {
+            if( key.StartsWith("Int") )
+            {
+                st.SetStructValue(key, StructValue.CreateIntArithmetic((int)v) );
+            }
+            else if (key.StartsWith("Float"))
+            {
+                st.SetStructValue(key, StructValue.CreateFloatArithmetic((float)v));
+            }
+            else
+            {
+                st.Set(key, v);
+            }
         }
 
         public static ReGoapTestGoal GetCustomGoal(GameObject gameObject, string name, Dictionary<string, object> goalState, int priority = 1)
@@ -35,7 +51,8 @@ namespace ReGoap.Unity.Editor.Test
             var goal = ReGoapState<string, object>.Instantiate();
             foreach (var pair in goalState)
             {
-                goal.Set(pair.Key, pair.Value);
+                //goal.Set(pair.Key, pair.Value);
+                _AddIntoReGoapState(goal, pair.Key, pair.Value);
             }
             customGoal.SetGoalState(goal);
             return customGoal;
@@ -49,7 +66,7 @@ namespace ReGoap.Unity.Editor.Test
                 foreach (var effectsPair in action.Action.GetEffects(plan.GetGoalState()).GetValues())
                 {   // in a real game this should be done by memory itself
                     //  e.x. isNearTarget = (transform.position - target.position).magnitude < minRangeForCC
-                    memory.SetValue(effectsPair.Key, effectsPair.Value);
+                    memory.SetStructValue(effectsPair.Key, effectsPair.Value);
                 }
             }
             Assert.That(plan.GetGoalState().MissingDifference(memory.GetWorldState(), 1) == 0);

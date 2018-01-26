@@ -142,8 +142,8 @@ namespace ReGoap.Planner
                 var precond = possibleAction.GetPreconditions(goal, action);
                 var effects = possibleAction.GetEffects(goal, action);
 
-                if (effects.HasAny(goal) && // any effect is the current goal
-                    !goal.HasAnyConflict(effects, precond) && // no precondition is conflicting with the goal
+                if (effects.HasAnyGoodForGoal(state, goal) && // any effect is the current goal
+                    //!goal.HasAnyConflict(effects, precond) && // no precondition is conflicting with the goal
                     possibleAction.CheckProceduralCondition(agent, goal, parent != null ? parent.action : null))
                 {
                     var newGoal = goal;
@@ -152,6 +152,7 @@ namespace ReGoap.Planner
             }
             return expandList;
         }
+
 
         private IReGoapAction<T, W> GetAction()
         {
