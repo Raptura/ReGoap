@@ -49,9 +49,15 @@ namespace ReGoap.Unity.Editor.Test
         }
 
         [Test]
-        public void TestSimpleChainedPlan()
+        public void TestPlan1()
         {
-            TestSimpleChainedPlan(GetPlanner());
+            TestPlan1(GetPlanner());
+        }
+
+        [Test]
+        public void TestPlan2()
+        {
+            TestPlan2(GetPlanner());
         }
 
         //[Test]
@@ -82,9 +88,39 @@ namespace ReGoap.Unity.Editor.Test
         //    ReGoapTestsHelper.ApplyAndValidatePlan(plan, memory);
         //}
 
-        public void TestSimpleChainedPlan(IGoapPlanner<string, object> planner)
+        public void TestPlan1(IGoapPlanner<string, object> planner)
         {
-            var gameObject = new GameObject("SimpleChainedPlan");
+            var gameObject = new GameObject();
+
+            ReGoapTestsHelper.GetCustomAction(gameObject, "BuyFood",
+                new Dictionary<string, object> { { "IntGold", 10 } },
+                new Dictionary<string, object> { { "IntGold", -10 }, { "IntFood", 1 } },
+                3);
+            ReGoapTestsHelper.GetCustomAction(gameObject, "GoMine",
+                new Dictionary<string, object> { },
+                new Dictionary<string, object> { { "IntGold", 10 } },
+                5);
+
+            var miningGoal = ReGoapTestsHelper.GetCustomGoal(gameObject, "Mine",
+                new Dictionary<string, object> { { "IntGold", 10 }, { "IntFood", 1 } });
+
+            var memory = gameObject.AddComponent<ReGoapTestMemory>();
+            memory.Init();
+            memory.SetStructValue("IntGold", StructValue.CreateIntArithmetic(10));
+
+            var agent = gameObject.AddComponent<ReGoapTestAgent>();
+            agent.Init();
+
+            var plan = planner.Plan(agent, null, null, null);
+
+            Assert.That(plan, Is.EqualTo(miningGoal));
+            // validate plan actions
+            ReGoapTestsHelper.ApplyAndValidatePlan(plan, memory);
+        }
+
+        public void TestPlan2(IGoapPlanner<string, object> planner)
+        {
+            var gameObject = new GameObject();
 
             ReGoapTestsHelper.GetCustomAction(gameObject, "BuyFood",
                 new Dictionary<string, object> { { "IntGold", 5} },

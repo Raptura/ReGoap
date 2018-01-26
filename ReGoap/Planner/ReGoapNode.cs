@@ -19,6 +19,9 @@ namespace ReGoap.Planner
 
         private readonly List<INode<ReGoapState<T, W>>> expandList;
 
+        public string Name { get { return action == null ? "NoAction" : action.GetName(); } }
+        public string GoalString { get { return goal.ToString(); } }
+
         private ReGoapNode()
         {
             expandList = new List<INode<ReGoapState<T, W>>>();
@@ -60,8 +63,26 @@ namespace ReGoap.Planner
 
                 // add all preconditions of the current action to the goal
                 goal.AddFromState(preconditions);
-                // removes from goal all the conditions that are now fullfiled in the node's state
+                // removes from goal all the conditions that are now fulfilled in the node's state
                 goal.ReplaceWithMissingDifference(state);
+                //goal.ReplaceWithMissingDifference(effects);
+
+                //// add into goal all the conditions that not fulfilled from planner's currentGoal state
+                //var pickupGoals = ReGoapState<T, W>.Instantiate();
+                //planner.GetCurrentGoal().GetGoalState().MissingDifference(state, ref pickupGoals);
+                //var goalValues = goal.GetValues();
+                //foreach (var pair in pickupGoals.GetValues())
+                //{
+                //    var key = pair.Key;
+                //    var value = pair.Value;
+                //    if (!goalValues.ContainsKey(key))
+                //    {
+                //        goal.SetStructValue(key, value);
+                //    }
+                //}
+
+                //Utilities.ReGoapLogger.Log(string.Format("****Node.Init: action: {1}, goal = {0}", goal, action.GetName()));
+
             }
             else
             {
@@ -144,10 +165,17 @@ namespace ReGoap.Planner
 
                 if (effects.HasAnyGoodForGoal(state, goal) && // any effect is the current goal
                     //!goal.HasAnyConflict(effects, precond) && // no precondition is conflicting with the goal
+                    !goal.HasAnyConflict(effects) &&
+                    !goal.IsNotHelpfulAtAll(effects, precond, state) &&
                     possibleAction.CheckProceduralCondition(agent, goal, parent != null ? parent.action : null))
                 {
+                    Utilities.ReGoapLogger.Log( string.Format("   oooo Expanded node: action: {0}\n\t effect {1}\n\t precond {2}", possibleAction.GetName(), effects, precond) );
                     var newGoal = goal;
                     expandList.Add(Instantiate(planner, newGoal, this, possibleAction));
+                }
+                else
+                {
+                    Utilities.ReGoapLogger.Log(string.Format("   xxxx Expanded node: action: {0}\n\t effect {1}\n\t precond {2}", possibleAction.GetName(), effects, precond));
                 }
             }
             return expandList;

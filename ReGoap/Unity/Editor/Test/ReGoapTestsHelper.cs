@@ -66,7 +66,19 @@ namespace ReGoap.Unity.Editor.Test
                 foreach (var effectsPair in action.Action.GetEffects(plan.GetGoalState()).GetValues())
                 {   // in a real game this should be done by memory itself
                     //  e.x. isNearTarget = (transform.position - target.position).magnitude < minRangeForCC
-                    memory.SetStructValue(effectsPair.Key, effectsPair.Value);
+                    string key = effectsPair.Key;
+                    StructValue curValue;
+                    StructValue endValue;
+
+                    if( memory.GetWorldState().GetValues().TryGetValue(key, out curValue) )
+                    {
+                        endValue = effectsPair.Value.MergeWith(curValue);
+                    }
+                    else
+                    {
+                        endValue = effectsPair.Value;
+                    }
+                    memory.SetStructValue(effectsPair.Key, endValue);
                 }
             }
             Assert.That(plan.GetGoalState().MissingDifference(memory.GetWorldState(), 1) == 0);
