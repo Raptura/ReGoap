@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using ReGoap.Core;
 
 namespace ReGoap.Planner
@@ -19,6 +20,8 @@ namespace ReGoap.Planner
 
         private readonly List<INode<ReGoapState<T, W>>> expandList;
 
+        private readonly List<T> tmpKeys = new List<T>();
+
         public string Name { get { return action == null ? "NoAction" : action.GetName(); } }
         public string GoalString { get { return goal.ToString(); } }
 
@@ -30,6 +33,7 @@ namespace ReGoap.Planner
         private void Init(IGoapPlanner<T, W> planner, ReGoapState<T, W> newGoal, ReGoapNode<T, W> parent, IReGoapAction<T, W> action)
         {
             expandList.Clear();
+            tmpKeys.Clear();
 
             this.planner = planner;
             this.parent = parent;
@@ -52,34 +56,101 @@ namespace ReGoap.Planner
             if (action != null)
             {
                 // create a new instance of the goal based on the paren't goal
-                goal = ReGoapState<T, W>.Instantiate(newGoal);
+                goal = ReGoapState<T, W>.Instantiate();
+                var tmpGoal = ReGoapState<T, W>.Instantiate(newGoal);
 
-                var preconditions = action.GetPreconditions(goal, nextAction);
-                var effects = action.GetEffects(goal, nextAction);
+                var preconditions = action.GetPreconditions(tmpGoal, nextAction);
+                var effects = action.GetEffects(tmpGoal, nextAction);
                 // adding the action's effects to the current node's state
                 state.AddFromState(effects);
                 // addding the action's cost to the node's total cost
-                g += action.GetCost(goal, nextAction);
+                g += action.GetCost(tmpGoal, nextAction);
 
-                // add all preconditions of the current action to the goal
-                goal.AddFromState(preconditions);
-                // removes from goal all the conditions that are now fulfilled in the node's state
-                goal.ReplaceWithMissingDifference(state);
-                //goal.ReplaceWithMissingDifference(effects);
+                //// add all preconditions of the current action to the goal
+                //tmpGoal.AddFromState(preconditions);
+                //// removes from goal all the conditions that are now fulfilled in the node's state
+                //tmpGoal.ReplaceWithMissingDifference(state);
+                ////goal.ReplaceWithMissingDifference(effects);
 
-                //// add into goal all the conditions that not fulfilled from planner's currentGoal state
-                //var pickupGoals = ReGoapState<T, W>.Instantiate();
-                //planner.GetCurrentGoal().GetGoalState().MissingDifference(state, ref pickupGoals);
-                //var goalValues = goal.GetValues();
-                //foreach (var pair in pickupGoals.GetValues())
-                //{
-                //    var key = pair.Key;
-                //    var value = pair.Value;
-                //    if (!goalValues.ContainsKey(key))
-                //    {
-                //        goal.SetStructValue(key, value);
-                //    }
-                //}
+                // collect all keys from goal & precondition, unique-ed
+                foreach(var pr in tmpGoal.GetValues())
+                {
+                    var k = pr.Key;
+                    if( !tmpKeys.Contains(k))
+                        tmpKeys.Add(k);
+                }
+                foreach(var pr in preconditions.GetValues())
+                {
+                    var k = pr.Key;
+                    if (!tmpKeys.Contains(k))
+                        tmpKeys.Add(k);
+                }
+
+                // process each keys
+                foreach(var k in tmpKeys)
+                {
+                    StructValue goalValue, effectValue, precondValue, stateValue, protoValue;
+                    tmpGoal.GetValues().TryGetValue(k, out goalValue);
+                    effects.GetValues().TryGetValue(k, out effectValue);
+                    preconditions.GetValues().TryGetValue(k, out precondValue);
+                    state.GetValues().TryGetValue(k, out stateValue);
+
+                    StructValue.EValueType valueType;
+                    _GetValueType(ref goalValue, ref effectValue, ref precondValue, ref stateValue, out valueType, out protoValue);
+                    if( valueType == StructValue.EValueType.Arithmetic )
+                    {
+                        _EnsureArithStructValueInited(ref goalValue, ref protoValue);
+                        _EnsureArithStructValueInited(ref effectValue, ref protoValue);
+                        _EnsureArithStructValueInited(ref precondValue, ref protoValue);
+                        _EnsureArithStructValueInited(ref stateValue, ref protoValue);
+
+                        float fGoal = Convert.ToSingle(goalValue.v);
+                        float fEffect = Convert.ToSingle(effectValue.v);
+                        float fPrecond = Convert.ToSingle(precondValue.v);
+                        float fState = Convert.ToSingle(stateValue.v);
+
+                        float finalV = Math.Max(
+                            fGoal - fEffect,
+                            Math.Min(fPrecond, fPrecond - fState)
+                        );
+
+                        var sv = StructValue.CopyCreate(ref protoValue, finalV);
+
+                        goal.SetStructValue(k, sv);
+                    }
+                    else if(valueType == StructValue.EValueType.Other)
+                    {
+                        // AddFromState
+                        if( precondValue.Inited )
+                        {
+                            if (goalValue.Inited)
+                                goalValue = goalValue.MergeWith(precondValue);
+                            else
+                                goalValue = precondValue;
+                        }
+                        //ReplaceWithMissingDifference
+                        if( !stateValue.Inited )
+                        {
+                            goal.SetStructValue(k, goalValue);
+                        }
+                        else if(!goalValue.IsFulfilledBy(stateValue))
+                        {
+                            var diffed = goalValue.DiffWith(stateValue);
+                            goal.SetStructValue(k, diffed);
+                        }
+                        else
+                        {
+                            //discard this goalValue
+                        }
+                    }
+                    else
+                    {
+                        UnityEngine.Debug.LogError("Unexpected StructValue type: " + valueType);
+                    }
+
+                }// foreach (var k in tmpKeys)
+
+                tmpGoal.Recycle();
 
                 //Utilities.ReGoapLogger.Log(string.Format("****Node.Init: action: {1}, goal = {0}", goal, action.GetName()));
 
@@ -89,10 +160,73 @@ namespace ReGoap.Planner
                 var diff = ReGoapState<T, W>.Instantiate();
                 newGoal.MissingDifference(state, ref diff);
                 goal = diff;
+
             }
-            h = goal.Count;
+
+            h = _CalculateH();
+
             // f(node) = g(node) + h(node)
             cost = g + h * heuristicMultiplier;
+        }
+
+        private int _CalculateH()
+        {
+            int cnt = 0;
+            foreach(var pr in goal.GetValues())
+            {
+                var v = pr.Value;
+                if (v.tp == StructValue.EValueType.Other)
+                {
+                    ++cnt;
+                }
+                else if( v.tp == StructValue.EValueType.Arithmetic)
+                {
+                    if (Convert.ToSingle(v.v) > 0)
+                        ++cnt;
+                }
+            }
+            return cnt;
+        }
+
+        private void _EnsureArithStructValueInited(ref StructValue sv, ref StructValue proto)
+        {
+            if( !sv.Inited )
+            {
+                sv = StructValue.CopyCreate(ref proto, 0);
+            }
+        }
+
+        private void _GetValueType(ref StructValue goalValue, ref StructValue effectValue, ref StructValue precondValue, ref StructValue stateValue, 
+            out StructValue.EValueType valueType,
+            out StructValue protoValue)
+        {
+            if (goalValue.Inited)
+            {
+                valueType = goalValue.tp;
+                protoValue = goalValue;
+            }
+            else if (effectValue.Inited)
+            {
+                valueType = effectValue.tp;
+                protoValue = effectValue;
+            }
+            else if (precondValue.Inited)
+            {
+                valueType = precondValue.tp;
+                protoValue = precondValue;
+            }
+            else if (stateValue.Inited)
+            {
+                valueType = stateValue.tp;
+                protoValue = stateValue;
+            }
+            else
+            {
+                UnityEngine.Debug.LogError("ReGoapNode._GetValueType: failed to find inited value");
+                valueType = StructValue.EValueType.Other;
+                protoValue = StructValue.Create(null);
+            }
+            
         }
 
         #region NodeFactory
@@ -169,9 +303,10 @@ namespace ReGoap.Planner
                     !goal.IsNotHelpfulAtAll(effects, precond, state) &&
                     possibleAction.CheckProceduralCondition(agent, goal, parent != null ? parent.action : null))
                 {
-                    Utilities.ReGoapLogger.Log( string.Format("   oooo Expanded node: action: {0}\n\t effect {1}\n\t precond {2}", possibleAction.GetName(), effects, precond) );
                     var newGoal = goal;
-                    expandList.Add(Instantiate(planner, newGoal, this, possibleAction));
+                    var newNode = Instantiate(planner, newGoal, this, possibleAction);
+                    expandList.Add(newNode);
+                    Utilities.ReGoapLogger.Log(string.Format("   oooo Expanded node: action: {0}\n\t effect {1}\n\t precond {2}\n\t goal {3}", possibleAction.GetName(), effects, precond, newNode.GoalString));
                 }
                 else
                 {

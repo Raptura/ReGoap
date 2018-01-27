@@ -437,6 +437,8 @@ namespace ReGoap.Core
         public Func<StructValue, StructValue, bool> isFulfilledByOP; //used for precondition check
         public Func<StructValue, StructValue, StructValue, bool> isBetterOp; // <this, that, target>, this op return true iff 'this' is nearer to 'target' than 'that'
 
+        public bool Inited { get { return mergeOp != null; } }
+
         public static StructValue Create(object v)
         {
             return Create(v, S_ReplaceMergeOP, S_KeepDiffOP, S_EqualIsFulFilledByOP, S_DefIsBetterOP, EValueType.Other);
@@ -465,6 +467,11 @@ namespace ReGoap.Core
             o.isBetterOp = isBetterOp;
             o.tp = tp;
             return o;
+        }
+
+        public static StructValue CopyCreate(ref StructValue proto, object v)
+        {
+            return Create(v, proto.mergeOp, proto.diffOp, proto.isFulfilledByOP, proto.isBetterOp, proto.tp);
         }
 
         //public static implicit operator W(StructValue st)

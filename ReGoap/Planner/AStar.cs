@@ -44,7 +44,7 @@ namespace ReGoap.Planner
             while ((frontier.Count > 0) && (iterations < maxIterations) && (frontier.Count + 1 < frontier.MaxSize))
             {
                 var node = frontier.Dequeue();
-                ReGoapLogger.Log(string.Format("\n++++Explored action: {0}, state ({1}), goal ({2})", node.Name, node.GetState(), node.GoalString));
+                Utilities.ReGoapLogger.Log(string.Format("\n++++Explored action: {0}({3}), state ({1}), goal ({2})", node.Name, node.GetState(), node.GoalString, node.GetCost()));
                 if (node.IsGoal(goal))
                 {
                     ReGoapLogger.Log("[Astar] Success iterations: " + iterations);
