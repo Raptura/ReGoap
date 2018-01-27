@@ -28,21 +28,31 @@ namespace ReGoap.Unity.Editor.Test
         }
 
         [Test]
-        public void TestSimpleChainedPlan()
+        public void TestConflictingEffectPlan()
         {
-            TestSimpleChainedPlan(GetPlanner());
-        }
+            var gameObject = new GameObject();
 
-        [Test]
-        public void TestPlan2()
-        {
-            TestPlan2(GetPlanner());
-        }
+            ReGoapTestsHelper.GetCustomAction(gameObject, "Mine Ore",
+                new Dictionary<string, object> { },
+                new Dictionary<string, object> { { "hasMoney", true } }, 10);
+            ReGoapTestsHelper.GetCustomAction(gameObject, "Buy Food",
+                new Dictionary<string, object> { { "hasMoney", true } },
+                new Dictionary<string, object> { { "hasFood", true }, { "hasMoney", false } }, 2);
 
-        [Test]
-        public void TestTwoPhaseChainedPlan()
-        {
-            TestTwoPhaseChainedPlan(GetPlanner());
+            var theGoal = ReGoapTestsHelper.GetCustomGoal(gameObject, "PrepareFoodAndMoney",
+                new Dictionary<string, object> { { "hasMoney", true }, { "hasFood", true } });
+
+            var memory = gameObject.AddComponent<ReGoapTestMemory>();
+            memory.Init();
+
+            var agent = gameObject.AddComponent<ReGoapTestAgent>();
+            agent.Init();
+
+            var plan = GetPlanner().Plan(agent, null, null, null);
+
+            Assert.That(plan, Is.EqualTo(theGoal));
+            // validate plan actions
+            ReGoapTestsHelper.ApplyAndValidatePlan(plan, memory);
         }
 
         [Test]
@@ -86,7 +96,7 @@ namespace ReGoap.Unity.Editor.Test
         }
 
         [Test]
-        public void TestConflictingActionPlan()
+        public void TestConflictingPlan()
         {
             var gameObject = new GameObject();
 
@@ -113,8 +123,44 @@ namespace ReGoap.Unity.Editor.Test
             ReGoapTestsHelper.ApplyAndValidatePlan(plan, memory);
         }
 
-        public void TestSimpleChainedPlan(IGoapPlanner<string, object> planner)
+        [Test]
+        public void TestConflictingPrecondPlan()
         {
+            var gameObject = new GameObject();
+
+            ReGoapTestsHelper.GetCustomAction(gameObject, "PutUpAxe",
+                new Dictionary<string, object> { { "isAtPosition", "Box" }, { "hasAxe", true } },
+                new Dictionary<string, object> { { "PutUpAxe", true }, { "hasAxe", false } }, 2);
+            ReGoapTestsHelper.GetCustomAction(gameObject, "GoToBox",
+                new Dictionary<string, object> { },
+                new Dictionary<string, object> { { "isAtPosition", "Box" } }, 4);
+            ReGoapTestsHelper.GetCustomAction(gameObject, "CraftAxe",
+                new Dictionary<string, object> { { "isAtPosition", "Workbench" } },
+                new Dictionary<string, object> { { "hasAxe", true } }, 1);
+            ReGoapTestsHelper.GetCustomAction(gameObject, "GotoWorkbench",
+                new Dictionary<string, object> { },
+                new Dictionary<string, object> { { "isAtPosition", "Workbench"} }, 4);
+
+            var hasAxeGoal = ReGoapTestsHelper.GetCustomGoal(gameObject, "Crafter",
+                new Dictionary<string, object> { { "PutUpAxe", true } });
+
+            var memory = gameObject.AddComponent<ReGoapTestMemory>();
+            memory.Init();
+
+            var agent = gameObject.AddComponent<ReGoapTestAgent>();
+            agent.Init();
+
+            var plan = GetPlanner().Plan(agent, null, null, null);
+
+            Assert.That(plan, Is.EqualTo(hasAxeGoal));
+            // validate plan actions
+            ReGoapTestsHelper.ApplyAndValidatePlan(plan, memory);
+        }
+
+        [Test]
+        public void TestSimpleChainedPlan()
+        {
+            var planner = GetPlanner();
             var gameObject = new GameObject();
 
             ReGoapTestsHelper.GetCustomAction(gameObject, "CreateAxe",
@@ -149,35 +195,10 @@ namespace ReGoap.Unity.Editor.Test
             ReGoapTestsHelper.ApplyAndValidatePlan(plan, memory);
         }
 
-        public void TestPlan2(IGoapPlanner<string, object> planner)
+        [Test]
+        public void TestTwoPhaseChainedPlan()
         {
-            var gameObject = new GameObject();
-
-            ReGoapTestsHelper.GetCustomAction(gameObject, "Mine Ore",
-                new Dictionary<string, object> { },
-                new Dictionary<string, object> { { "hasMoney", true } }, 10);
-            ReGoapTestsHelper.GetCustomAction(gameObject, "Buy Food",
-                new Dictionary<string, object> { { "hasMoney", true } },
-                new Dictionary<string, object> { { "hasFood", true }, { "hasMoney", false} }, 2);
-            
-            var theGoal = ReGoapTestsHelper.GetCustomGoal(gameObject, "PrepareFoodAndMoney",
-                new Dictionary<string, object> { { "hasMoney", true }, { "hasFood", true } });
-
-            var memory = gameObject.AddComponent<ReGoapTestMemory>();
-            memory.Init();
-
-            var agent = gameObject.AddComponent<ReGoapTestAgent>();
-            agent.Init();
-
-            var plan = planner.Plan(agent, null, null, null);
-
-            Assert.That(plan, Is.EqualTo(theGoal));
-            // validate plan actions
-            ReGoapTestsHelper.ApplyAndValidatePlan(plan, memory);
-        }
-
-        public void TestTwoPhaseChainedPlan(IGoapPlanner<string, object> planner)
-        {
+            var planner = GetPlanner();
             var gameObject = new GameObject();
 
             ReGoapTestsHelper.GetCustomAction(gameObject, "CCAction",

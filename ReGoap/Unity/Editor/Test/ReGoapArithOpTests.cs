@@ -60,6 +60,74 @@ namespace ReGoap.Unity.Editor.Test
             TestPlan2(GetPlanner());
         }
 
+        [Test]
+        public void TestImpossiblePlanNonDynamicActions()
+        {
+            var planner = new ReGoapPlanner<string, object>(
+                new ReGoapPlannerSettings { PlanningEarlyExit = false, UsingDynamicActions = false, MaxIterations=100, MaxNodesToExpand=20 }
+            );
+
+            var gameObject = new GameObject();
+
+            ReGoapTestsHelper.GetCustomAction(gameObject, "BuyFood",
+                new Dictionary<string, object> { { "IntGold", 10 } },
+                new Dictionary<string, object> { { "IntGold", -10 }, { "IntFood", 1 } },
+                3);
+            ReGoapTestsHelper.GetCustomAction(gameObject, "GoMine",
+                new Dictionary<string, object> { {"IntFood", 1 } },
+                new Dictionary<string, object> { { "IntGold", 5 }, { "IntFood", -1} },
+                5);
+
+            var miningGoal = ReGoapTestsHelper.GetCustomGoal(gameObject, "GetGold",
+                new Dictionary<string, object> { { "IntGold", 30 } });
+
+            var memory = gameObject.AddComponent<ReGoapTestMemory>();
+            memory.Init();
+            memory.SetStructValue("IntGold", StructValue.CreateIntArithmetic(10));
+            memory.SetStructValue("IntFood", StructValue.CreateIntArithmetic(3));
+
+            var agent = gameObject.AddComponent<ReGoapTestAgent>();
+            agent.Init();
+
+            var plan = planner.Plan(agent, null, null, null);
+
+            Assert.That(plan, Is.Null);
+        }
+
+        [Test]
+        public void TestImpossiblePlanDynamicActions()
+        {
+            var planner = new ReGoapPlanner<string, object>(
+                new ReGoapPlannerSettings { PlanningEarlyExit = false, UsingDynamicActions = true, MaxIterations = 100, MaxNodesToExpand = 20 }
+            );
+
+            var gameObject = new GameObject();
+
+            ReGoapTestsHelper.GetCustomAction(gameObject, "BuyFood",
+                new Dictionary<string, object> { { "IntGold", 10 } },
+                new Dictionary<string, object> { { "IntGold", -10 }, { "IntFood", 1 } },
+                3);
+            ReGoapTestsHelper.GetCustomAction(gameObject, "GoMine",
+                new Dictionary<string, object> { { "IntFood", 1 } },
+                new Dictionary<string, object> { { "IntGold", 5 }, { "IntFood", -1 } },
+                5);
+
+            var miningGoal = ReGoapTestsHelper.GetCustomGoal(gameObject, "GetGold",
+                new Dictionary<string, object> { { "IntGold", 30 } });
+
+            var memory = gameObject.AddComponent<ReGoapTestMemory>();
+            memory.Init();
+            memory.SetStructValue("IntGold", StructValue.CreateIntArithmetic(10));
+            memory.SetStructValue("IntFood", StructValue.CreateIntArithmetic(3));
+
+            var agent = gameObject.AddComponent<ReGoapTestAgent>();
+            agent.Init();
+
+            var plan = planner.Plan(agent, null, null, null);
+
+            Assert.That(plan, Is.Null);
+        }
+
         public void TestPlan1(IGoapPlanner<string, object> planner)
         {
             var gameObject = new GameObject();
@@ -120,64 +188,5 @@ namespace ReGoap.Unity.Editor.Test
             ReGoapTestsHelper.ApplyAndValidatePlan(plan, memory);
         }
 
-        //public void TestTwoPhaseChainedPlan(IGoapPlanner<string, object> planner)
-        //{
-        //    var gameObject = new GameObject();
-
-        //    ReGoapTestsHelper.GetCustomAction(gameObject, "CCAction",
-        //        new Dictionary<string, object> { { "hasWeaponEquipped", true }, { "isNearEnemy", true } },
-        //        new Dictionary<string, object> { { "killedEnemy", true } }, 4);
-        //    ReGoapTestsHelper.GetCustomAction(gameObject, "EquipAxe",
-        //        new Dictionary<string, object> { { "hasAxe", true } },
-        //        new Dictionary<string, object> { { "hasWeaponEquipped", true } }, 1);
-        //    ReGoapTestsHelper.GetCustomAction(gameObject, "GoToEnemy",
-        //        new Dictionary<string, object> { { "hasTarget", true } },
-        //        new Dictionary<string, object> { { "isNearEnemy", true } }, 3);
-        //    ReGoapTestsHelper.GetCustomAction(gameObject, "CreateAxe",
-        //        new Dictionary<string, object> { { "hasWood", true }, { "hasSteel", true } },
-        //        new Dictionary<string, object> { { "hasAxe", true }, { "hasWood", false }, { "hasSteel", false } }, 10);
-        //    ReGoapTestsHelper.GetCustomAction(gameObject, "ChopTree",
-        //        new Dictionary<string, object> { },
-        //        new Dictionary<string, object> { { "hasRawWood", true } }, 2);
-        //    ReGoapTestsHelper.GetCustomAction(gameObject, "WorksWood",
-        //        new Dictionary<string, object> { { "hasRawWood", true } },
-        //        new Dictionary<string, object> { { "hasWood", true }, { "hasRawWood", false } }, 5);
-        //    ReGoapTestsHelper.GetCustomAction(gameObject, "MineOre", new Dictionary<string, object> { },
-        //        new Dictionary<string, object> { { "hasOre", true } }, 10);
-        //    ReGoapTestsHelper.GetCustomAction(gameObject, "SmeltOre",
-        //        new Dictionary<string, object> { { "hasOre", true } },
-        //        new Dictionary<string, object> { { "hasSteel", true }, { "hasOre", false } }, 10);
-
-        //    var readyToFightGoal = ReGoapTestsHelper.GetCustomGoal(gameObject, "ReadyToFightGoal",
-        //        new Dictionary<string, object> { { "hasWeaponEquipped", true } }, 2);
-        //    ReGoapTestsHelper.GetCustomGoal(gameObject, "HasAxeGoal",
-        //        new Dictionary<string, object> { { "hasAxe", true } });
-        //    var killEnemyGoal = ReGoapTestsHelper.GetCustomGoal(gameObject, "KillEnemyGoal",
-        //        new Dictionary<string, object> { { "killedEnemy", true } }, 3);
-
-        //    var memory = gameObject.AddComponent<ReGoapTestMemory>();
-        //    memory.Init();
-
-        //    var agent = gameObject.AddComponent<ReGoapTestAgent>();
-        //    agent.Init();
-
-        //    // first plan should create axe and equip it, through 'ReadyToFightGoal', since 'hasTarget' is false (memory should handle this)
-        //    var plan = planner.Plan(agent, null, null, null);
-
-        //    Assert.That(plan, Is.EqualTo(readyToFightGoal));
-        //    // we apply manually the effects, but in reality the actions should do this themselves 
-        //    //  and the memory should understand what happened 
-        //    //  (e.g. equip weapon action? memory should set 'hasWeaponEquipped' to true if the action equipped something)
-        //    // validate plan actions
-        //    ReGoapTestsHelper.ApplyAndValidatePlan(plan, memory);
-
-        //    // now we tell the memory that we see the enemy
-        //    memory.SetValue("hasTarget", true);
-        //    // now the planning should choose KillEnemyGoal
-        //    plan = planner.Plan(agent, null, null, null);
-
-        //    Assert.That(plan, Is.EqualTo(killEnemyGoal));
-        //    ReGoapTestsHelper.ApplyAndValidatePlan(plan, memory);
-        //}
     }
 }

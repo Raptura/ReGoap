@@ -24,6 +24,7 @@ namespace ReGoap.Planner
 
         public string Name { get { return action == null ? "NoAction" : action.GetName(); } }
         public string GoalString { get { return goal.ToString(); } }
+        public string EffectString { get { return action != null ? action.GetEffects(goal).ToString() : ""; } }
 
         private ReGoapNode()
         {
@@ -151,8 +152,6 @@ namespace ReGoap.Planner
                 }// foreach (var k in tmpKeys)
 
                 tmpGoal.Recycle();
-
-                //Utilities.ReGoapLogger.Log(string.Format("****Node.Init: action: {1}, goal = {0}", goal, action.GetName()));
 
             }
             else
@@ -298,9 +297,9 @@ namespace ReGoap.Planner
                 var effects = possibleAction.GetEffects(goal, action);
 
                 if (effects.HasAnyGoodForGoal(state, goal) && // any effect is the current goal
-                    //!goal.HasAnyConflict(effects, precond) && // no precondition is conflicting with the goal
-                    !goal.HasAnyConflict(effects) &&
-                    !goal.IsNotHelpfulAtAll(effects, precond, state) &&
+                    !goal.HasAnyConflictPrecond(effects, precond) && // no precondition is conflicting with the goal (non-arithmetic)
+                    !goal.HasAnyConflictEffect(effects) && //no effect is conflicting with goal (non-arithmetic)
+                    !goal.IsNotHelpfulAtAll(effects, precond, state) && //(arithmetic)
                     possibleAction.CheckProceduralCondition(agent, goal, parent != null ? parent.action : null))
                 {
                     var newGoal = goal;

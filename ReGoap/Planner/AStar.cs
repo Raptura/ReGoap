@@ -44,7 +44,7 @@ namespace ReGoap.Planner
             while ((frontier.Count > 0) && (iterations < maxIterations) && (frontier.Count + 1 < frontier.MaxSize))
             {
                 var node = frontier.Dequeue();
-                Utilities.ReGoapLogger.Log(string.Format("\n++++Explored action: {0}({3}), state ({1}), goal ({2})", node.Name, node.GetState(), node.GoalString, node.GetCost()));
+                Utilities.ReGoapLogger.Log(string.Format("\n++++Explored action: {0}({3}), state ({1})\n goal ({2})\n effect: ({4})", node.Name, node.GetState(), node.GoalString, node.GetCost(), node.EffectString));
                 if (node.IsGoal(goal))
                 {
                     ReGoapLogger.Log("[Astar] Success iterations: " + iterations);
@@ -79,7 +79,7 @@ namespace ReGoap.Planner
                             break;
                     }
 
-                    ReGoapLogger.Log(string.Format("    Enqueue frontier: {0}, cost: {1}", child.Name, childCost));
+                    Utilities.ReGoapLogger.Log(string.Format("    Enqueue frontier: {0}, cost: {1}", child.Name, childCost));
                     frontier.Enqueue(child, childCost);
                     stateToNode[state] = child;
                 }
@@ -101,6 +101,7 @@ namespace ReGoap.Planner
         bool IsGoal(T goal);
         string Name { get; }
         string GoalString { get; }
+        string EffectString { get; }
 
         int QueueIndex { get; set; }
         float Priority { get; set; }

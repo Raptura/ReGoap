@@ -72,7 +72,7 @@ namespace ReGoap.Unity.Editor.Test
 
                     if( memory.GetWorldState().GetValues().TryGetValue(key, out curValue) )
                     {
-                        endValue = effectsPair.Value.MergeWith(curValue);
+                        endValue = curValue.MergeWith(effectsPair.Value);
                     }
                     else
                     {

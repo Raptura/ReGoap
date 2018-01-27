@@ -136,28 +136,52 @@ namespace ReGoap.Core
         //        }
         //}
 
-        //// this method is more relaxed than the other, also accepts conflits that are fixed by "changes"
-        //public bool HasAnyConflict(ReGoapState<T, W> changes, ReGoapState<T, W> other) // used only in backward for now //effect, precond
-        //{
-        //    lock (values) lock (other.values)
-        //        {
-        //            foreach (var pair in other.values)
-        //            {
-        //                W thisValue;
-        //                values.TryGetValue(pair.Key, out thisValue);
-        //                W effectValue;
-        //                changes.values.TryGetValue(pair.Key, out effectValue);
-        //                var otherValue = pair.Value;
-        //                if (otherValue == null || Equals(otherValue, false))
-        //                    continue;
-        //                if (thisValue != null && !Equals(otherValue, thisValue) && !Equals(effectValue, thisValue))
-        //                    return true;
-        //            }
-        //            return false;
-        //        }
-        //}
+        /// <summary>
+        /// For non-arithmetic values,
+        ///     if a child node's precond overwrite one of the goal's value, then it's conflict
+        ///     
+        /// REASON: (non-arithmetic value)
+        ///     if a child node modifies the precond's value, then the ancestor node's precond is ignored by children nodes
+        /// </summary>
+        public bool HasAnyConflictPrecond(ReGoapState<T, W> effects, ReGoapState<T, W> precond) // used only in backward for now //effect, precond
+        {
+            lock (values) lock (precond.values)
+                {
+                    foreach (var pair in precond.values)
+                    {
+                        T key = pair.Key;
+                        StructValue precondValue = pair.Value;
 
-        public bool HasAnyConflict(ReGoapState<T,W> effect)
+                        if (precondValue.tp != StructValue.EValueType.Other)
+                            continue;
+
+                        StructValue thisValue;
+                        StructValue effectValue;
+
+                        values.TryGetValue(key, out thisValue);
+                        effects.values.TryGetValue(key, out effectValue);
+
+                        if (
+                             thisValue.Inited && !thisValue.IsFulfilledBy(precondValue) &&
+                             (!effectValue.Inited || !thisValue.IsFulfilledBy(effectValue))
+                           )
+                        {
+                            return true;
+                        }
+                    }
+                    return false;
+                }
+        }
+
+        /// <summary>
+        /// For non-arithmetic values,
+        ///     if an effect's value invalidates a goal's value, then this effect is unacceptable
+        ///     
+        /// REASON: (non-arithmetic values)
+        ///     if a child node changes a goal's value to invalid, the ancestor node cannot set it back
+        ///     it's okay for a child to leave the goal's value as invalid, but it cannot set it from valid to invalid, or from invalid to invalid
+        /// </summary>
+        public bool HasAnyConflictEffect(ReGoapState<T,W> effect)
         {
             lock (values) lock (effect.values)
                 {
@@ -474,6 +498,11 @@ namespace ReGoap.Core
             return Create(v, proto.mergeOp, proto.diffOp, proto.isFulfilledByOP, proto.isBetterOp, proto.tp);
         }
 
+
+        public override string ToString()
+        {
+            return v.ToString();
+        }
         //public static implicit operator W(StructValue st)
         //{
         //    return (W)st.v;
