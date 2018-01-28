@@ -1,4 +1,5 @@
-﻿using ReGoap.Unity.FSMExample.OtherScripts;
+﻿using ReGoap.Core;
+using ReGoap.Unity.FSMExample.OtherScripts;
 
 namespace ReGoap.Unity.FSMExample.Sensors
 {
@@ -16,7 +17,7 @@ namespace ReGoap.Unity.FSMExample.Sensors
             var state = memory.GetWorldState();
             foreach (var pair in resourcesBag.GetResources())
             {
-                state.Set("hasResource" + pair.Key, pair.Value > 0);
+                state.SetStructValue("hasResource" + pair.Key, StructValue.CreateFloatArithmetic(pair.Value));
             }
         }
     }

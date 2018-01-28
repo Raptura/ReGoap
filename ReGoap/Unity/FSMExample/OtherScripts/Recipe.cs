@@ -15,7 +15,10 @@ namespace ReGoap.Unity.FSMExample.OtherScripts
             foreach (var resourceName in NeededResourcesName)
             {
                 // could implement a more flexible system that has dynamic resources's count (need to create ad-hoc actions or a generic one that handle number of resources)
-                dict[resourceName] = 1f;
+                if (dict.ContainsKey(resourceName))
+                    dict[resourceName] += 1f;
+                else
+                    dict[resourceName] = 1f;
             }
             return dict;
         }

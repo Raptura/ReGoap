@@ -300,13 +300,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f07e24589d2a7634b9035bfcdf2f3cb4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  MultiThread: 1
+  MultiThread: 0
   ThreadsCount: 4
   PlannerSettings:
     PlanningEarlyExit: 1
     MaxIterations: 100
-    MaxNodesToExpand: 1000
+    MaxNodesToExpand: 20
     UsingDynamicActions: 1
+    HeuristicMultiplier: 10
   LogLevel: 3
   NodeWarmupCount: 10000
   StatesWarmupCount: 100000
@@ -8631,8 +8632,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 884770e97ce814c43b1f204490bf74c0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  BuildersCount: 10
-  BuilderPrefab: {fileID: 1125005807267310, guid: 3b8d017b7fea5bb45bd85faf2f15bd5a,
+  BuildersCount: 1
+  BuilderPrefab: {fileID: 1142621789569398, guid: 300ef28de2a10034ca5c0fdc787973cf,
     type: 2}
   DelayBetweenSpawns: 0.133
   AgentsPerSpawn: 1

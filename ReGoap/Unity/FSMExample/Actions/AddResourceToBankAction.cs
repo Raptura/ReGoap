@@ -44,6 +44,7 @@ namespace ReGoap.Unity.FSMExample.Actions
                 {
                     var resourceName = pair.Key.Substring(17);
                     effects.Set("collectedResource" + resourceName, true);
+                    effects.SetStructValue("hasResource" + resourceName, StructValue.CreateFloatArithmetic(-1f));
                     break;
                 }
             }
@@ -63,7 +64,7 @@ namespace ReGoap.Unity.FSMExample.Actions
                 if (pair.Key.StartsWith("collectedResource"))
                 {
                     var resourceName = pair.Key.Substring(17);
-                    preconditions.Set("hasResource" + resourceName, true);
+                    preconditions.SetStructValue("hasResource" + resourceName, StructValue.CreateFloatArithmetic(1f));
                     break;
                 }
             }
@@ -76,9 +77,20 @@ namespace ReGoap.Unity.FSMExample.Actions
         {
             base.Run(previous, next, settings, goalState, done, fail);
             this.settings = (AddResourceToBankSettings) settings;
-            var bank = agent.GetMemory().GetWorldState().Get("nearestBank") as Bank;
+            var wstate = agent.GetMemory().GetWorldState();
+            var bank = wstate.Get("nearestBank") as Bank;
             if (bank != null && bank.AddResource(resourcesBag, ((AddResourceToBankSettings) settings).ResourceName))
             {
+                foreach(var pair in wstate.GetValues())
+                {
+                    if( pair.Key.StartsWith("collectedResource") )
+                    {
+                        var rName = pair.Key.Substring(17);
+                        var newV = wstate.ForceGetStructValueFloat("hasResource" + rName, 0).MergeWith(StructValue.CreateFloatArithmetic(-1f));
+                        wstate.SetStructValue("hasResource" + rName, newV);
+                    }
+                }
+
                 done(this);
             }
             else

@@ -27,9 +27,11 @@ namespace ReGoap.Unity.FSMExample.Actions
         {
             foreach (var pair in goalState.GetValues())
             {
-                if (pair.Key.StartsWith("hasResource"))
+                if (pair.Key == "hasResourceTree" || pair.Key == "hasResourceOre")
                 {
-                    return pair.Key.Substring(11);
+                    var pVal = pair.Value;
+                    if( Convert.ToSingle(pVal.v) > 0 )
+                        return pair.Key.Substring(11);
                 }
             }
             return null;
@@ -60,7 +62,7 @@ namespace ReGoap.Unity.FSMExample.Actions
                 var wantedResource = agent.GetMemory().GetWorldState().Get("nearest" + newNeededResourceName) as IResource;
                 if (wantedResource != null)
                 {
-                    effects.Set("hasResource" + newNeededResourceName, true);
+                    effects.SetStructValue("hasResource" + newNeededResourceName, StructValue.CreateFloatArithmetic(1f));
                 }
             }
             return effects;
@@ -119,7 +121,12 @@ namespace ReGoap.Unity.FSMExample.Actions
                 gatherCooldown = float.MaxValue;
                 ReGoapLogger.Log("[GatherResourceAction] acquired " + ResourcePerAction + " " + resource.GetName());
                 resource.RemoveResource(ResourcePerAction);
-                bag.AddResource(resource.GetName(), ResourcePerAction);
+                var rName = resource.GetName();
+                bag.AddResource(rName, ResourcePerAction);
+                var wstate = agent.GetMemory().GetWorldState();
+                var newV = wstate.ForceGetStructValueFloat("hasResource" + rName, 0)
+                    .MergeWith(StructValue.CreateFloatArithmetic(1f));
+                wstate.SetStructValue("hasResource" + rName, newV);
                 doneCallback(this);
             }
         }
