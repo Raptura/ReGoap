@@ -16,15 +16,17 @@ namespace ReGoap.Planner
         private float g;
         private float h;
 
-        private float heuristicMultiplier = 1;
+        //private float heuristicMultiplier = 1;
 
         private readonly List<INode<ReGoapState<T, W>>> expandList;
 
         private readonly List<T> tmpKeys = new List<T>();
 
+        //public int AstarID { get; set; }
         public string Name { get { return action == null ? "NoAction" : action.GetName(); } }
         public string GoalString { get { return goal.ToString(); } }
         public string EffectString { get { return action != null ? action.GetEffects(goal).ToString() : ""; } }
+        public string PrecondString { get { return action != null ? action.GetPreconditions(goal).ToString() : ""; } }
 
         private ReGoapNode()
         {
@@ -100,10 +102,13 @@ namespace ReGoap.Planner
                     _GetValueType(ref goalValue, ref effectValue, ref precondValue, ref stateValue, out valueType, out protoValue);
                     if( valueType == StructValue.EValueType.Arithmetic )
                     {
-                        _EnsureArithStructValueInited(ref goalValue, ref protoValue);
+
+                        //_EnsureArithStructValueInited(ref goalValue, ref protoValue);
                         _EnsureArithStructValueInited(ref effectValue, ref protoValue);
                         _EnsureArithStructValueInited(ref precondValue, ref protoValue);
                         _EnsureArithStructValueInited(ref stateValue, ref protoValue);
+                        if (!goalValue.Inited)
+                            goalValue = stateValue;
 
                         float fGoal = Convert.ToSingle(goalValue.v);
                         float fEffect = Convert.ToSingle(effectValue.v);
@@ -165,26 +170,27 @@ namespace ReGoap.Planner
             h = _CalculateH();
 
             // f(node) = g(node) + h(node)
-            cost = g + h * heuristicMultiplier;
+            cost = g + h * planner.GetSettings().HeuristicMultiplier;
         }
 
-        private int _CalculateH()
+        private float _CalculateH()
         {
-            int cnt = 0;
+            float h = 0;
             foreach(var pr in goal.GetValues())
             {
-                var v = pr.Value;
-                if (v.tp == StructValue.EValueType.Other)
+                var pairValue = pr.Value;
+                if (pairValue.tp == StructValue.EValueType.Other)
                 {
-                    ++cnt;
+                    ++h;
                 }
-                else if( v.tp == StructValue.EValueType.Arithmetic)
+                else if( pairValue.tp == StructValue.EValueType.Arithmetic)
                 {
-                    if (Convert.ToSingle(v.v) > 0)
-                        ++cnt;
+                    float v = Convert.ToSingle(pairValue.v);
+                    if(v > 0)  
+                        h += v;
                 }
             }
-            return cnt;
+            return h;
         }
 
         private void _EnsureArithStructValueInited(ref StructValue sv, ref StructValue proto)

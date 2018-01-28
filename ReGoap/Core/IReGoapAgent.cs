@@ -4,6 +4,7 @@ namespace ReGoap.Core
 {
     public interface IReGoapAgent<T, W>
     {
+        bool debugPlan { get; }
         IReGoapMemory<T, W> GetMemory();
         IReGoapGoal<T, W> GetCurrentGoal();
         // called from a goal when the goal is available
@@ -17,5 +18,6 @@ namespace ReGoap.Core
         List<IReGoapGoal<T, W>> GetGoalsSet();
         List<IReGoapAction<T, W>> GetActionsSet();
         ReGoapState<T, W> InstantiateNewState();
+
     }
 }

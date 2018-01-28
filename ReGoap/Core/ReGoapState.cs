@@ -383,7 +383,7 @@ namespace ReGoap.Core
         {
             lock (values)
             {
-                var result = "GoapState: ";
+                var result = "";
                 foreach (var pair in values)
                     result += string.Format("'{0}': {1}, ", pair.Key, pair.Value.v);
                 return result;
@@ -408,6 +408,57 @@ namespace ReGoap.Core
             }
         }
 
+        public StructValue GetStructValue(T key)
+        {
+            lock(values)
+            {
+                StructValue st;
+                values.TryGetValue(key, out st);
+                return st;
+            }
+        }
+
+        public StructValue ForceGetStructValueInt(T key, int def)
+        {
+            lock(values)
+            {
+                StructValue st;
+                if( ! values.TryGetValue(key, out st) )
+                {
+                    st = StructValue.CreateIntArithmetic(def);
+                    values.Add(key, st);
+                }
+                return st;
+            }
+        }
+
+        public StructValue ForceGetStructValueFloat(T key, float def)
+        {
+            lock (values)
+            {
+                StructValue st;
+                if (!values.TryGetValue(key, out st))
+                {
+                    st = StructValue.CreateFloatArithmetic(def);
+                    values.Add(key, st);
+                }
+                return st;
+            }
+        }
+
+        public StructValue ForceGetStructValueObject(T key, object def)
+        {
+            lock (values)
+            {
+                StructValue st;
+                if (!values.TryGetValue(key, out st))
+                {
+                    st = StructValue.Create(def);
+                    values.Add(key, st);
+                }
+                return st;
+            }
+        }
         public void SetStructValue(T key, StructValue st)
         {
             lock(values)
@@ -602,7 +653,15 @@ namespace ReGoap.Core
 
         public static bool FloatLessEqual_IsFulfilledByOP(StructValue goal, StructValue other)
         {
-            return Convert.ToSingle(goal.v) <= Convert.ToSingle(other.v);
+            try
+            {
+                return Convert.ToSingle(goal.v) <= Convert.ToSingle(other.v);
+            }
+            catch(Exception e)
+            {
+                UnityEngine.Debug.Log(e);
+                return false;
+            }
         }
 
         public static bool FloatBigger_IsBetterOP(StructValue self, StructValue other, StructValue target)
