@@ -150,6 +150,7 @@ namespace ReGoap.Unity.Editor.Test
 
             var agent = gameObject.AddComponent<ReGoapTestAgent>();
             agent.Init();
+            agent.debugPlan = true;
 
             var plan = planner.Plan(agent, null, null, null);
 
@@ -177,6 +178,40 @@ namespace ReGoap.Unity.Editor.Test
             var memory = gameObject.AddComponent<ReGoapTestMemory>();
             memory.Init();
             memory.SetStructValue("IntGold", StructValue.CreateIntArithmetic(20));
+
+            var agent = gameObject.AddComponent<ReGoapTestAgent>();
+            agent.Init();
+            agent.debugPlan = true;
+
+            var plan = planner.Plan(agent, null, null, null);
+
+            Assert.That(plan, Is.EqualTo(miningGoal));
+            // validate plan actions
+            ReGoapTestsHelper.ApplyAndValidatePlan(plan, memory);
+        }
+
+        [Test]
+        public void TestPlan3()
+        {
+            var planner = GetPlanner();
+            var gameObject = new GameObject();
+
+            ReGoapTestsHelper.GetCustomAction(gameObject, "BuyFood",
+                new Dictionary<string, object> { { "IntGold", 5 } },
+                new Dictionary<string, object> { { "IntGold", -5 }, { "IntFood", 2 } },
+                3);
+            ReGoapTestsHelper.GetCustomAction(gameObject, "GoMine",
+                new Dictionary<string, object> { { "IntFood", 2 } },
+                new Dictionary<string, object> { { "IntFood", -2 }, { "IntGold", 20 } },
+                5);
+
+            var miningGoal = ReGoapTestsHelper.GetCustomGoal(gameObject, "Mine",
+                new Dictionary<string, object> { { "IntGold", 40 } });
+
+            var memory = gameObject.AddComponent<ReGoapTestMemory>();
+            memory.Init();
+            memory.SetStructValue("IntGold", StructValue.CreateIntArithmetic(20));
+            memory.SetStructValue("IntFood", StructValue.CreateIntArithmetic(20));
 
             var agent = gameObject.AddComponent<ReGoapTestAgent>();
             agent.Init();

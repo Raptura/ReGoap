@@ -30,3 +30,6 @@ sysinfo.txt
 *.unitypackage
 ReGoap/Unity/SimExample/
 ReGoap/Unity/SimExample.meta
+/ReGoap/Planner/PlanDebugger.tt.meta
+/ReGoap/Planner/PlanDebugger1.cs
+/ReGoap/Planner/PlanDebugger1.cs.meta

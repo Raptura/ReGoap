@@ -39,7 +39,7 @@ namespace ReGoap.Unity
         {
             get { return startedPlanning && currentReGoapPlanWorker.NewGoal == null; }
         }
-        public bool debugPlan { get { return shouldDebugPlan; } }
+        public bool debugPlan { get { return shouldDebugPlan; } set { shouldDebugPlan = value; } }
 
         #region UnityFunctions
         protected virtual void Awake()

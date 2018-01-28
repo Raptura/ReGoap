@@ -220,24 +220,65 @@ namespace ReGoap.Core
                     foreach(var pair in effect.values)
                     {
                         T key = pair.Key;
-                        StructValue goalValue;
+                        StructValue effectValue = pair.Value;
 
-                        if( values.TryGetValue(key, out goalValue) )
+                        if (effectValue.tp == StructValue.EValueType.Arithmetic)
                         {
-                            StructValue effectValue = pair.Value;
-                            StructValue origEffectValue = effectValue;
-                            StructValue curStateValue;
-                            if( curState.values.TryGetValue(key, out curStateValue) )
-                                effectValue = effectValue.MergeWith(curStateValue);
-
-                            if ( goalValue.IsFulfilledBy(effectValue) || //the effect fulfilled the target
-                                 origEffectValue.IsBetter(curStateValue, goalValue) //the effect make it better fulfulled the target
-                                )
+                            StructValue goalValue;
+                            if (values.TryGetValue(key, out goalValue))
                             {
-                                nonHelpful = false;
-                                break;
+                                if (goalValue.IsFulfilledBy(effectValue))
+                                {
+                                    if (Convert.ToSingle(goalValue.v) > 0) //if the goal has just been satified by this effect, okay
+                                    {
+                                        nonHelpful = false;
+                                        break;
+                                    }
+                                }
+                                else if (Convert.ToSingle(effectValue.v) > 0) //not fulfill the target, but make it better towards target
+                                {
+                                    nonHelpful = false;
+                                    break;
+                                }
+
+                                //StructValue curStateValue;
+                                //if (curState.values.TryGetValue(key, out curStateValue))
+                                //{
+                                //    effectValue = effectValue.MergeWith(curStateValue);
+                                //}
+                                //if( goalValue.IsFulfilledBy(effectValue) )
+                                //{ 
+                                //    if (!goalValue.IsFulfilledBy(curStateValue))//if the effect has just fulfilled the goal, it's okay
+                                //    {
+                                //        nonHelpful = false;
+                                //        break;
+                                //    }
+                                //}
+                                //else if ( origEffectValue.IsBetter(curStateValue, goalValue) )//not fulfill target, but the effect make it better fulfulled the target
+                                //{
+                                //    nonHelpful = false;
+                                //    break;
+                                //}
                             }
                         }
+                        else
+                        {
+                            StructValue goalValue;
+                            StructValue curStateValue;
+                            if( values.TryGetValue(key, out goalValue) )
+                            {
+                                if( goalValue.IsFulfilledBy(effectValue) )
+                                {
+                                    curState.values.TryGetValue(key, out curStateValue);
+                                    if( !curStateValue.Inited || !goalValue.IsFulfilledBy(curStateValue) )
+                                    {
+                                        nonHelpful = false;
+                                        break;
+                                    }
+                                }
+                            }
+                            
+                        }                        
                     }
                     return nonHelpful;
                 }

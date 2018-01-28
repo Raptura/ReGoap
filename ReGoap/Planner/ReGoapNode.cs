@@ -108,7 +108,7 @@ namespace ReGoap.Planner
                         _EnsureArithStructValueInited(ref precondValue, ref protoValue);
                         _EnsureArithStructValueInited(ref stateValue, ref protoValue);
                         if (!goalValue.Inited)
-                            goalValue = stateValue;
+                            goalValue = StructValue.CopyCreate(ref stateValue, -(Convert.ToSingle(stateValue.v) - Convert.ToSingle(effectValue.v)) );
 
                         float fGoal = Convert.ToSingle(goalValue.v);
                         float fEffect = Convert.ToSingle(effectValue.v);

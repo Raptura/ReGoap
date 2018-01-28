@@ -47,10 +47,17 @@ namespace ReGoap.Planner
             }
         }
 
-        private void _EndDebugPlan()
+        private void _EndDebugPlan(INode<T> node)
         {
             if(null != _debugger)
             {
+                while( node != null )
+                { //mark success path
+                    string nodeStr = string.Format("{0} [style=filled, color=\"#00FF00\"]", node.GetHashCode());
+                    _debugger.AddNode(nodeStr);
+                    node = node.GetParent();
+                }
+
                 var txt = _debugger.TransformText();
                 System.IO.File.WriteAllText("DebugPlan.dot", txt);
                 _debugger.Clear();
@@ -82,7 +89,7 @@ namespace ReGoap.Planner
                 if (node.IsGoal(goal))
                 {
                     ReGoapLogger.Log("[Astar] Success iterations: " + iterations);
-                    _EndDebugPlan();
+                    _EndDebugPlan(node);
                     return node;
                 }
                 explored[node.GetState()] = node;
@@ -98,7 +105,7 @@ namespace ReGoap.Planner
                     if (earlyExit && child.IsGoal(goal))
                     {
                         ReGoapLogger.Log("[Astar] (early exit) Success iterations: " + iterations);
-                        _EndDebugPlan();
+                        _EndDebugPlan(child);
                         return child;
                     }
                     var childCost = child.GetCost();
@@ -123,7 +130,7 @@ namespace ReGoap.Planner
                 }
             }
             ReGoapLogger.LogWarning("[Astar] failed.");
-            _EndDebugPlan();
+            _EndDebugPlan(null);
             return null;
         }
     }
