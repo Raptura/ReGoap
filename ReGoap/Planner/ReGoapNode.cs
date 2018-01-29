@@ -322,11 +322,11 @@ namespace ReGoap.Planner
                     var newGoal = goal;
                     var newNode = Instantiate(planner, newGoal, this, possibleAction);
                     expandList.Add(newNode);
-                    Utilities.ReGoapLogger.Log(string.Format("   oooo Expanded node: action: {0}\n\t effect {1}\n\t precond {2}\n\t goal {3}", possibleAction.GetName(), effects, precond, newNode.GoalString));
+                    //Utilities.ReGoapLogger.Log(string.Format("   oooo Expanded node: action: {0}\n\t effect {1}\n\t precond {2}\n\t goal {3}", possibleAction.GetName(), effects, precond, newNode.GoalString));
                 }
                 else
                 {
-                    Utilities.ReGoapLogger.Log(string.Format("   xxxx Expanded node: action: {0}\n\t effect {1}\n\t precond {2}", possibleAction.GetName(), effects, precond));
+                    //Utilities.ReGoapLogger.Log(string.Format("   xxxx Expanded node: action: {0}\n\t effect {1}\n\t precond {2}", possibleAction.GetName(), effects, precond));
                 }
             }
             return expandList;

@@ -5,23 +5,25 @@ using ReGoap.Unity.Test;
 using NUnit.Framework;
 using UnityEngine;
 
+using ReGoap.Utilities;
+
 namespace ReGoap.Unity.Editor.Test
 {
     public class ReGoapTests
     {
-        private Utilities.ReGoapLogger.DebugLevel _level;
+        private ReGoapLogger.DebugLevel _level;
 
         [OneTimeSetUp]
         public void Init()
         {
-            _level = Utilities.ReGoapLogger.Level;
-            Utilities.ReGoapLogger.Level = Utilities.ReGoapLogger.DebugLevel.Full;
+            _level = ReGoapLogger.Level;
+            ReGoapLogger.Level = ReGoapLogger.DebugLevel.Full;
         }
 
         [OneTimeTearDown]
         public void Dispose()
         {
-            Utilities.ReGoapLogger.Level = _level;
+            ReGoapLogger.Level = _level;
         }
 
         IGoapPlanner<string, object> GetPlanner()

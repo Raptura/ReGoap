@@ -68,7 +68,7 @@ namespace ReGoap.Planner
                     }
                 }
 
-                Utilities.ReGoapLogger.Log(string.Format("**** Goal: {0}, Expected State = ({1})", currentGoal.GetName(), goalState));
+                //Utilities.ReGoapLogger.Log(string.Format("**** Goal: {0}, Expected State = ({1})", currentGoal.GetName(), goalState));
 
                 goalState = goalState.Clone();
                 var leaf = (ReGoapNode<T, W>)astar.Run(

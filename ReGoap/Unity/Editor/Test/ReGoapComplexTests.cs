@@ -5,30 +5,32 @@ using ReGoap.Unity.Test;
 using NUnit.Framework;
 using UnityEngine;
 
+using ReGoap.Utilities;
+
 namespace ReGoap.Unity.Editor.Test
 {
     public class ReGoapComplexTests
     {
-        Utilities.ReGoapLogger.DebugLevel _level;
+        ReGoapLogger.DebugLevel _level;
 
         [OneTimeSetUp]
         public void Init()
         {
-            _level = Utilities.ReGoapLogger.Level;
-            Utilities.ReGoapLogger.Level = Utilities.ReGoapLogger.DebugLevel.WarningsOnly;
+            _level = ReGoapLogger.Level;
+            ReGoapLogger.Level = ReGoapLogger.DebugLevel.WarningsOnly;
         }
 
         [OneTimeTearDown]
         public void Dispose()
         {
-            Utilities.ReGoapLogger.Level = _level;
+            ReGoapLogger.Level = _level;
         }
 
         IGoapPlanner<string, object> GetPlanner()
         {
             // not using early exit to have precise results, probably wouldn't care in a game for performance reasons
             return new ReGoapPlanner<string, object>(
-                new ReGoapPlannerSettings { PlanningEarlyExit = false, UsingDynamicActions = true, MaxIterations = 1000 }
+                new ReGoapPlannerSettings { PlanningEarlyExit = false, UsingDynamicActions = true, MaxIterations = 10000, MaxNodesToExpand = 10000 }
             );
         }
 
@@ -63,7 +65,7 @@ namespace ReGoap.Unity.Editor.Test
         }
 
         [Test]
-        public void TestCollectResource()
+        public void TestCollectResource1()
         {
             var planner = GetPlanner();
 
@@ -101,6 +103,114 @@ namespace ReGoap.Unity.Editor.Test
 
             var miningGoal = ReGoapTestsHelper.GetCustomGoal(gameObject, "MakeTool",
                 new Dictionary<string, object> { { "IntTool", 1 } } );
+
+            var memory = gameObject.AddComponent<ReGoapTestMemory>();
+            memory.Init();
+
+            var agent = gameObject.AddComponent<ReGoapTestAgent>();
+            agent.Init();
+            agent.shouldDebugPlan = true;
+
+            var plan = planner.Plan(agent, null, null, null);
+
+            Assert.That(plan, Is.EqualTo(miningGoal));
+            // validate plan actions
+            ReGoapTestsHelper.ApplyAndValidatePlan(plan, memory);
+        }
+
+        [Test]
+        public void TestCollectResource2()
+        {
+            var planner = GetPlanner();
+
+            var gameObject = new GameObject();
+
+            ReGoapTestsHelper.GetCustomAction(gameObject, "GatherTree",
+                new Dictionary<string, object> { { "At", "Tree" } },
+                new Dictionary<string, object> { { "IntTree", 1 } },
+                3);
+            ReGoapTestsHelper.GetCustomAction(gameObject, "GatherOre",
+                new Dictionary<string, object> { { "At", "Ore" } },
+                new Dictionary<string, object> { { "IntOre", 1 } },
+                5);
+            ReGoapTestsHelper.GetCustomAction(gameObject, "GoToTree",
+                new Dictionary<string, object> { },
+                new Dictionary<string, object> { { "At", "Tree" } },
+                7);
+            ReGoapTestsHelper.GetCustomAction(gameObject, "GoToOre",
+                new Dictionary<string, object> { },
+                new Dictionary<string, object> { { "At", "Ore" } },
+                7);
+            ReGoapTestsHelper.GetCustomAction(gameObject, "GoToBench",
+                new Dictionary<string, object> { },
+                new Dictionary<string, object> { { "At", "Bench" } },
+                7);
+            ReGoapTestsHelper.GetCustomAction(gameObject, "MakeTool",
+                new Dictionary<string, object> { { "At", "Bench" }, { "IntWood", 2 }, { "IntOre", 2 } },
+                new Dictionary<string, object> { { "IntTool", 1 }, { "IntWood", -2 }, { "IntOre", -2 } },
+                6);
+            ReGoapTestsHelper.GetCustomAction(gameObject, "MakeWood",
+                new Dictionary<string, object> { { "At", "Bench" }, { "IntTree", 2 } },
+                new Dictionary<string, object> { { "IntWood", 2 }, { "IntTree", -2 } },
+                6);
+
+
+            var miningGoal = ReGoapTestsHelper.GetCustomGoal(gameObject, "MakeTool",
+                new Dictionary<string, object> { { "IntTool", 1 } });
+
+            var memory = gameObject.AddComponent<ReGoapTestMemory>();
+            memory.Init();
+
+            var agent = gameObject.AddComponent<ReGoapTestAgent>();
+            agent.Init();
+            agent.shouldDebugPlan = true;
+
+            var plan = planner.Plan(agent, null, null, null);
+
+            Assert.That(plan, Is.EqualTo(miningGoal));
+            // validate plan actions
+            ReGoapTestsHelper.ApplyAndValidatePlan(plan, memory);
+        }
+
+        [Test]
+        public void TestCollectResource3()
+        {
+            var planner = GetPlanner();
+
+            var gameObject = new GameObject();
+
+            ReGoapTestsHelper.GetCustomAction(gameObject, "GatherTree",
+                new Dictionary<string, object> { { "At", "Tree" } },
+                new Dictionary<string, object> { { "IntTree", 1 } },
+                3);
+            ReGoapTestsHelper.GetCustomAction(gameObject, "GatherOre",
+                new Dictionary<string, object> { { "At", "Ore" } },
+                new Dictionary<string, object> { { "IntOre", 1 } },
+                5);
+            ReGoapTestsHelper.GetCustomAction(gameObject, "GoToTree",
+                new Dictionary<string, object> { },
+                new Dictionary<string, object> { { "At", "Tree" } },
+                7);
+            ReGoapTestsHelper.GetCustomAction(gameObject, "GoToOre",
+                new Dictionary<string, object> { },
+                new Dictionary<string, object> { { "At", "Ore" } },
+                7);
+            ReGoapTestsHelper.GetCustomAction(gameObject, "GoToBench",
+                new Dictionary<string, object> { },
+                new Dictionary<string, object> { { "At", "Bench" } },
+                7);
+            ReGoapTestsHelper.GetCustomAction(gameObject, "MakeTool",
+                new Dictionary<string, object> { { "At", "Bench" }, { "IntWood", 2 }, { "IntOre", 2 } },
+                new Dictionary<string, object> { { "IntTool", 1 }, { "IntWood", -2 }, { "IntOre", -2 } },
+                6);
+            ReGoapTestsHelper.GetCustomAction(gameObject, "MakeWood",
+                new Dictionary<string, object> { { "At", "Bench" }, { "IntTree", 2 } },
+                new Dictionary<string, object> { { "IntWood", 2 }, { "IntTree", -2 } },
+                6);
+
+
+            var miningGoal = ReGoapTestsHelper.GetCustomGoal(gameObject, "MakeTool",
+                new Dictionary<string, object> { { "IntTool", 2 } });
 
             var memory = gameObject.AddComponent<ReGoapTestMemory>();
             memory.Init();
