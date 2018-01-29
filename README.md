@@ -1,4 +1,19 @@
-# ReGoap
+﻿# ReGoap
+
+### ----------- INTRO for this fork -----------
+
+STRIPS describes the world-states with a bunch of booleans. [1]
+
+[ReGoap][2] has extended it to be able to use any values, like string, int, float, etc. Although it can use int/float values, it cannot add or compare it during the planning, there's only Equal(x,y) op.
+
+*This fork* is made to enable arithmetic operations of + and <  for planning;
+
+**WARNING:** Don't go too far with arithmetic ops, a 16-level, 2-branch tree potentially has 65535 nodes, A* could prune most of the branches, but it could still takes thousands of nodes to reach the goal.
+
+**WARNING2:** rough API, subjected to further changes;
+
+### ----------- INTRO for this fork -----------
+
 Generic C# GOAP (Goal Oriented Action Planning) library with Unity3d examples and helpers classes.
 
 This library is very generic, if you don't include the Unity folder you can use it in any game engine.
@@ -212,3 +227,6 @@ Now if you click on any agent in your scene (while playing, works only on runnin
 
 ## Pull Requests
 Any pull request is appreciated, just make sure to check Unity Tests (menu **Window** -> **Editor Tests Runner** -> **Run All**) before committing and to keep the same style of code.
+
+[1]: https://en.wikipedia.org/wiki/STRIPS
+[2]: https://github.com/luxkun/ReGoap

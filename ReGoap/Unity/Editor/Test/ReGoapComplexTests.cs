@@ -17,7 +17,7 @@ namespace ReGoap.Unity.Editor.Test
         public void Init()
         {
             _level = ReGoapLogger.Level;
-            ReGoapLogger.Level = ReGoapLogger.DebugLevel.WarningsOnly;
+            ReGoapLogger.Level = ReGoapLogger.DebugLevel.Full;
         }
 
         [OneTimeTearDown]
@@ -151,7 +151,7 @@ namespace ReGoap.Unity.Editor.Test
                 6);
             ReGoapTestsHelper.GetCustomAction(gameObject, "MakeWood",
                 new Dictionary<string, object> { { "At", "Bench" }, { "IntTree", 2 } },
-                new Dictionary<string, object> { { "IntWood", 2 }, { "IntTree", -2 } },
+                new Dictionary<string, object> { { "IntWood", 1 }, { "IntTree", -2 } },
                 6);
 
 
