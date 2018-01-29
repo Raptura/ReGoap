@@ -59,7 +59,8 @@ namespace ReGoap.Planner
                 }
 
                 var txt = _debugger.TransformText();
-                System.IO.File.WriteAllText("DebugPlan.dot", txt);
+                System.IO.Directory.CreateDirectory("PlanDebugger");
+                System.IO.File.WriteAllText(string.Format("PlanDebugger/DebugPlan_{0}.dot", System.DateTime.Now.ToString("HHmmss_ffff")), txt);
                 _debugger.Clear();
             }
         }

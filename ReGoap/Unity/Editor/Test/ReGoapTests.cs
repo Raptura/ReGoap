@@ -256,7 +256,8 @@ namespace ReGoap.Unity.Editor.Test
             ReGoapTestsHelper.GetCustomAction(gameObject, "WorksWood",
                 new Dictionary<string, object> { { "hasRawWood", true } },
                 new Dictionary<string, object> { { "hasWood", true }, { "hasRawWood", false } }, 5);
-            ReGoapTestsHelper.GetCustomAction(gameObject, "MineOre", new Dictionary<string, object> { },
+            ReGoapTestsHelper.GetCustomAction(gameObject, "MineOre", 
+                new Dictionary<string, object> { },
                 new Dictionary<string, object> { { "hasOre", true } }, 10);
             ReGoapTestsHelper.GetCustomAction(gameObject, "SmeltOre",
                 new Dictionary<string, object> { { "hasOre", true } },
@@ -274,6 +275,7 @@ namespace ReGoap.Unity.Editor.Test
 
             var agent = gameObject.AddComponent<ReGoapTestAgent>();
             agent.Init();
+            agent.debugPlan = true;
 
             // first plan should create axe and equip it, through 'ReadyToFightGoal', since 'hasTarget' is false (memory should handle this)
             var plan = planner.Plan(agent, null, null, null);
@@ -283,7 +285,7 @@ namespace ReGoap.Unity.Editor.Test
             //  and the memory should understand what happened 
             //  (e.g. equip weapon action? memory should set 'hasWeaponEquipped' to true if the action equipped something)
             // validate plan actions
-            ReGoapTestsHelper.ApplyAndValidatePlan(plan, memory);
+            ReGoapTestsHelper.ApplyAndValidatePlan(plan, memory); 
 
             // now we tell the memory that we see the enemy
             memory.SetValue("hasTarget", true);

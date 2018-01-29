@@ -126,28 +126,39 @@ namespace ReGoap.Planner
                     }
                     else if(valueType == StructValue.EValueType.Other)
                     {
-                        // AddFromState
-                        if( precondValue.Inited )
-                        {
-                            if (goalValue.Inited)
-                                goalValue = goalValue.MergeWith(precondValue);
-                            else
-                                goalValue = precondValue;
-                        }
                         //ReplaceWithMissingDifference
-                        if( !stateValue.Inited )
+                        if (stateValue.Inited && goalValue.Inited && goalValue.IsFulfilledBy(stateValue))
+                            goalValue.Invalidate();
+
+                        // AddFromPrecond 
+                        // 1. if the precond is satisfied by the memory start state, then discard
+                        // 2. else this newly added goal from precond, should not be removed due to fulfilled by curStateValue
+                        if (precondValue.Inited)
                         {
+                            bool preCondfulfilledByMem = false;
+                            var startMemoryState = planner.GetCurrentAgent().GetMemory().GetWorldState();
+                            StructValue startMemoryValue;
+                            if(startMemoryState.GetValues().TryGetValue(k, out startMemoryValue))
+                            {
+                                if( startMemoryValue.Inited && precondValue.IsFulfilledBy(startMemoryValue) )
+                                {
+                                    preCondfulfilledByMem = true; 
+                                }
+                            }
+
+                            if( !preCondfulfilledByMem )
+                            {
+                                if (goalValue.Inited)
+                                    goalValue = goalValue.MergeWith(precondValue);
+                                else
+                                    goalValue = precondValue;
+                            }
+                            
+                        }
+
+                        if (goalValue.Inited)
                             goal.SetStructValue(k, goalValue);
-                        }
-                        else if(!goalValue.IsFulfilledBy(stateValue))
-                        {
-                            var diffed = goalValue.DiffWith(stateValue);
-                            goal.SetStructValue(k, diffed);
-                        }
-                        else
-                        {
-                            //discard this goalValue
-                        }
+
                     }
                     else
                     {

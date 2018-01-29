@@ -226,7 +226,7 @@ namespace ReGoap.Core
                         {
                             StructValue goalValue;
                             if (values.TryGetValue(key, out goalValue))
-                            {
+                            {// if a goal is satisfied already, then this effect is not useful (not really, but this helps to prune the search tree)
                                 if (goalValue.IsFulfilledBy(effectValue))
                                 {
                                     if (Convert.ToSingle(goalValue.v) > 0) //if the goal has just been satified by this effect, okay
@@ -240,25 +240,6 @@ namespace ReGoap.Core
                                     nonHelpful = false;
                                     break;
                                 }
-
-                                //StructValue curStateValue;
-                                //if (curState.values.TryGetValue(key, out curStateValue))
-                                //{
-                                //    effectValue = effectValue.MergeWith(curStateValue);
-                                //}
-                                //if( goalValue.IsFulfilledBy(effectValue) )
-                                //{ 
-                                //    if (!goalValue.IsFulfilledBy(curStateValue))//if the effect has just fulfilled the goal, it's okay
-                                //    {
-                                //        nonHelpful = false;
-                                //        break;
-                                //    }
-                                //}
-                                //else if ( origEffectValue.IsBetter(curStateValue, goalValue) )//not fulfill target, but the effect make it better fulfulled the target
-                                //{
-                                //    nonHelpful = false;
-                                //    break;
-                                //}
                             }
                         }
                         else
@@ -554,6 +535,15 @@ namespace ReGoap.Core
         public Func<StructValue, StructValue, StructValue, bool> isBetterOp; // <this, that, target>, this op return true iff 'this' is nearer to 'target' than 'that'
 
         public bool Inited { get { return mergeOp != null; } }
+
+        public void Invalidate()
+        {
+            mergeOp = null;
+            diffOp = null;
+            isFulfilledByOP = null;
+            isBetterOp = null;
+            v = null;
+        }
 
         public static StructValue Create(object v)
         {
