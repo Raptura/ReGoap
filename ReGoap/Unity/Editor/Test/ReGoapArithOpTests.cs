@@ -61,6 +61,74 @@ namespace ReGoap.Unity.Editor.Test
         }
 
         [Test]
+        public void TestNegativePlan1()
+        {
+            var planner = GetPlanner();
+            var gameObject = new GameObject();
+
+            ReGoapTestsHelper.GetCustomAction(gameObject, "CollectRes",
+                new Dictionary<string, object> {  },
+                new Dictionary<string, object> { { "NFloatRisk", 10f }, { "IntGold", 10 } },
+                3);
+            ReGoapTestsHelper.GetCustomAction(gameObject, "ReduceRisk",
+                new Dictionary<string, object> { { "IntGold", -10 } },
+                new Dictionary<string, object> { { "NFloatRisk", -20f }, { "IntGold", -10 } },
+                5);
+
+            var goal = ReGoapTestsHelper.GetCustomGoal(gameObject, "GetGold",
+                new Dictionary<string, object> { { "NFloatRisk", 10f } });
+
+            var memory = gameObject.AddComponent<ReGoapTestMemory>();
+            memory.Init();
+            memory.SetStructValue("NFloatRisk", StructValue.CreateFloatArithmetic(50f));
+            memory.SetStructValue("IntGold", StructValue.CreateFloatArithmetic(10));
+
+            var agent = gameObject.AddComponent<ReGoapTestAgent>();
+            agent.Init();
+            agent.debugPlan = true;
+
+            var plan = planner.Plan(agent, null, null, null);
+
+            Assert.That(plan, Is.EqualTo(goal));
+            Assert.That(plan.GetPlan().Count, Is.EqualTo(5));
+            // validate plan actions
+            ReGoapTestsHelper.ApplyAndValidatePlan(plan, memory);
+        }
+
+        [Test]
+        public void TestNegativePlan2()
+        {
+            var planner = GetPlanner();
+            var gameObject = new GameObject();
+
+            ReGoapTestsHelper.GetCustomAction(gameObject, "CollectRes",
+                new Dictionary<string, object> { },
+                new Dictionary<string, object> { { "NFloatRisk", 10f }, { "IntGold", 10 } },
+                3);
+            ReGoapTestsHelper.GetCustomAction(gameObject, "ReduceRisk",
+                new Dictionary<string, object> { { "IntGold", -10 } },
+                new Dictionary<string, object> { { "NFloatRisk", -20f }, { "IntGold", -10 }},
+                5);
+
+            var goal = ReGoapTestsHelper.GetCustomGoal(gameObject, "GetGold",
+                new Dictionary<string, object> { { "NFloatRisk", 10f } });
+
+            var memory = gameObject.AddComponent<ReGoapTestMemory>();
+            memory.Init();
+            memory.SetStructValue("NFloatRisk", StructValue.CreateFloatArithmetic(50f));
+
+            var agent = gameObject.AddComponent<ReGoapTestAgent>();
+            agent.Init();
+            agent.debugPlan = true;
+
+            var plan = planner.Plan(agent, null, null, null);
+
+            Assert.That(plan, Is.EqualTo(goal));
+            // validate plan actions
+            ReGoapTestsHelper.ApplyAndValidatePlan(plan, memory);
+        }
+
+        [Test]
         public void TestImpossiblePlanNonDynamicActions()
         {
             var planner = new ReGoapPlanner<string, object>(
