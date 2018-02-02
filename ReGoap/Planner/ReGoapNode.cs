@@ -196,9 +196,10 @@ namespace ReGoap.Planner
                 }
                 else if( pairValue.tp == StructValue.EValueType.Arithmetic)
                 {
-                    float v = Convert.ToSingle(pairValue.v);
-                    if(v > 0)  
-                        h += v;
+                    float goalValue = Convert.ToSingle(pairValue.v);
+                    var defValue = StructValue.CopyCreate(ref pairValue, 0);
+                    if( ! pairValue.IsFulfilledBy(defValue) )
+                        h += Math.Abs(goalValue);
                 }
             }
             return h;

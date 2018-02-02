@@ -6,7 +6,7 @@ STRIPS describes the world-states with a bunch of booleans. [1]
 
 [ReGoap][2] has extended it to be able to use any values, like string, int, float, etc. Although it can use int/float values, it cannot add or compare it during the planning, there's only Equal(x,y) op.
 
-*This fork* is made to enable arithmetic operations of + and <  for planning;
+*This fork* is made to enable arithmetic operations of +, <, >  for planning;
 
 **WARNING:** Don't go too far with arithmetic ops, a 16-level, 2-branch tree potentially has 65535 nodes, A* could prune most of the branches, but it could still takes thousands of nodes to reach the goal.
 

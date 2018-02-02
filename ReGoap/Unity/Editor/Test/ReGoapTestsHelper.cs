@@ -36,6 +36,14 @@ namespace ReGoap.Unity.Editor.Test
             {
                 st.SetStructValue(key, StructValue.CreateFloatArithmetic((float)v));
             }
+            else if(key.StartsWith("NInt"))
+            {
+                st.SetStructValue(key, StructValue.CreateIntArithmetic((int)v, neg : true));
+            }
+            else if(key.StartsWith("NFloat"))
+            {
+                st.SetStructValue(key, StructValue.CreateFloatArithmetic((float)v, neg: true));
+            }
             else
             {
                 st.Set(key, v);

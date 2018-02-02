@@ -221,21 +221,25 @@ namespace ReGoap.Core
                     {
                         T key = pair.Key;
                         StructValue effectValue = pair.Value;
+                        StructValue curStateValue;
 
                         if (effectValue.tp == StructValue.EValueType.Arithmetic)
                         {
                             StructValue goalValue;
+                            curState.values.TryGetValue(key, out curStateValue);
+
                             if (values.TryGetValue(key, out goalValue))
                             {// if a goal is satisfied already, then this effect is not useful (not really, but this helps to prune the search tree)
                                 if (goalValue.IsFulfilledBy(effectValue))
                                 {
-                                    if (Convert.ToSingle(goalValue.v) > 0) //if the goal has just been satified by this effect, okay
-                                    {
+                                    var defValue = StructValue.CopyCreate(ref goalValue, 0);
+                                    if (! goalValue.IsFulfilledBy(defValue)) //if the goal has just been satified by this effect, okay
+                                    { //e.g: for non-neg int, goalValue > 0
                                         nonHelpful = false;
                                         break;
                                     }
                                 }
-                                else if (Convert.ToSingle(effectValue.v) > 0) //not fulfill the target, but make it better towards target
+                                else if (effectValue.IsBetter(curStateValue, goalValue)) //not fulfill the target, but make it better towards target
                                 {
                                     nonHelpful = false;
                                     break;
@@ -245,7 +249,6 @@ namespace ReGoap.Core
                         else
                         {
                             StructValue goalValue;
-                            StructValue curStateValue;
                             if( values.TryGetValue(key, out goalValue) )
                             {
                                 if( goalValue.IsFulfilledBy(effectValue) )
@@ -549,13 +552,19 @@ namespace ReGoap.Core
         {
             return Create(v, S_ReplaceMergeOP, S_KeepDiffOP, S_EqualIsFulFilledByOP, S_DefIsBetterOP, EValueType.Other);
         }
-        public static StructValue CreateIntArithmetic(int v)
+        public static StructValue CreateIntArithmetic(int v, bool neg = false)
         {
-            return Create(v, S_IntAdd_MergeOP, S_IntSub_DiffOp, S_IntLessEqual_IsFulfilledByOP, S_IntBigger_IsBetterOP, EValueType.Arithmetic);
+            if (!neg)
+                return Create(v, S_IntAdd_MergeOP, S_IntSub_DiffOp, S_IntLessEqual_IsFulfilledByOP, S_IntBigger_IsBetterOP, EValueType.Arithmetic);
+            else
+                return Create(v, S_IntAdd_MergeOP, S_IntSub_DiffOp, S_IntGreaterEqual_IsFulfilledByOP, S_IntSmaller_IsBetterOP, EValueType.Arithmetic);
         }
-        public static StructValue CreateFloatArithmetic(float v)
+        public static StructValue CreateFloatArithmetic(float v, bool neg = false)
         {
-            return Create(v, S_FloatAdd_MergeOP, S_FloatSub_DiffOp, S_FloatLessEqual_IsFulfilledByOP, S_FloatBigger_IsBetterOP, EValueType.Arithmetic);
+            if (!neg)
+                return Create(v, S_FloatAdd_MergeOP, S_FloatSub_DiffOp, S_FloatLessEqual_IsFulfilledByOP, S_FloatBigger_IsBetterOP, EValueType.Arithmetic);
+            else
+                return Create(v, S_FloatAdd_MergeOP, S_FloatSub_DiffOp, S_FloatGreaterEqual_IsFulfilledByOP, S_FloatSmaller_IsBetterOP, EValueType.Arithmetic);
         }
         public static StructValue Create(object v,
             Func<StructValue, StructValue, StructValue> mergeOp,
@@ -643,42 +652,53 @@ namespace ReGoap.Core
 
         public static StructValue IntAdd_MergeOP(StructValue self, StructValue other)
         {
-            StructValue newOne = StructValue.CreateIntArithmetic(Convert.ToInt32(self.v) + Convert.ToInt32(other.v));
+            int v = Convert.ToInt32(self.v) + Convert.ToInt32(other.v);
+            StructValue newOne = StructValue.CopyCreate(ref self, v);
             return newOne;
         }
         public static StructValue IntSub_DiffOp(StructValue self, StructValue other)
         {
-            StructValue newOne = StructValue.CreateIntArithmetic(Convert.ToInt32(self.v) - Convert.ToInt32(other.v));
+            int v = Convert.ToInt32(self.v) - Convert.ToInt32(other.v);
+            StructValue newOne = StructValue.CopyCreate(ref self, v);
             return newOne;
         }
         public static bool IntLessEqual_IsFulfilledByOP(StructValue goal, StructValue other)
         {
             return Convert.ToInt32(goal.v) <= Convert.ToInt32(other.v);
         }
-        public static bool IntBigger_IsBetterOP(StructValue self, StructValue other, StructValue target)
+        public static bool IntGreaterEqual_IsFulfilledByOP(StructValue goal, StructValue other)
         {
-            int vSelf = Convert.ToInt32(self.v);
-            //int vOther = Convert.ToInt32(other.v);
-            //int vTarget = Convert.ToInt32(target.v);
-
-            //return Math.Abs(vSelf + vOther - vTarget) < Math.Abs(vOther - vTarget);
+            return Convert.ToInt32(goal.v) >= Convert.ToInt32(other.v);
+        }
+        public static bool IntBigger_IsBetterOP(StructValue effect, StructValue curState, StructValue target)
+        {
+            int vSelf = Convert.ToInt32(effect.v);
             return vSelf > 0;
+        }
+        public static bool IntSmaller_IsBetterOP(StructValue effect, StructValue curState, StructValue target)
+        {
+            int vEff = Convert.ToInt32(effect.v);
+            return vEff < 0;
         }
 
         public static readonly Func<StructValue, StructValue, StructValue> S_IntAdd_MergeOP = IntAdd_MergeOP;
         public static readonly Func<StructValue, StructValue, StructValue> S_IntSub_DiffOp = IntSub_DiffOp;
         public static readonly Func<StructValue, StructValue, bool> S_IntLessEqual_IsFulfilledByOP = IntLessEqual_IsFulfilledByOP;
+        public static readonly Func<StructValue, StructValue, bool> S_IntGreaterEqual_IsFulfilledByOP = IntGreaterEqual_IsFulfilledByOP;
         public static readonly Func<StructValue, StructValue, StructValue, bool> S_IntBigger_IsBetterOP = IntBigger_IsBetterOP;
+        public static readonly Func<StructValue, StructValue, StructValue, bool> S_IntSmaller_IsBetterOP = IntSmaller_IsBetterOP;
 
         public static StructValue FloatAdd_MergeOP(StructValue self, StructValue other)
         {
-            StructValue newOne = StructValue.CreateFloatArithmetic(Convert.ToSingle(self.v) + Convert.ToSingle(other.v));
+            float v = Convert.ToSingle(self.v) + Convert.ToSingle(other.v);
+            StructValue newOne = StructValue.CopyCreate(ref self, v);
             return newOne;
         }
 
         public static StructValue FloatSub_DiffOp(StructValue self, StructValue other)
         {
-            StructValue newOne = StructValue.CreateFloatArithmetic(Convert.ToSingle(self.v) - Convert.ToSingle(other.v));
+            float v = Convert.ToSingle(self.v) - Convert.ToSingle(other.v);
+            StructValue newOne = StructValue.CopyCreate(ref self, v);
             return newOne;
         }
 
@@ -690,25 +710,42 @@ namespace ReGoap.Core
             }
             catch(Exception e)
             {
-                UnityEngine.Debug.Log(e);
+                UnityEngine.Debug.LogError(e);
                 return false;
             }
         }
 
-        public static bool FloatBigger_IsBetterOP(StructValue self, StructValue other, StructValue target)
+        public static bool FloatGreaterEqual_IsFulfilledByOP(StructValue goal, StructValue other)
         {
-            float vSelf = Convert.ToSingle(self.v);
-            //float vOther = Convert.ToSingle(other.v);
-            //float vTarget = Convert.ToSingle(target.v);
+            try
+            {
+                return Convert.ToSingle(goal.v) >= Convert.ToSingle(other.v);
+            }
+            catch (Exception e)
+            {
+                UnityEngine.Debug.LogError(e);
+                return false;
+            }
+        }
 
-            //return Math.Abs(vSelf + vOther - vTarget) < Math.Abs(vOther - vTarget);
-            return vSelf > 0;
+        public static bool FloatBigger_IsBetterOP(StructValue effect, StructValue curState, StructValue target)
+        {
+            float vEffect = Convert.ToSingle(effect.v);
+            return vEffect > 0;
+        }
+
+        public static bool FloatSmaller_IsBetterOP(StructValue effect, StructValue curState, StructValue target)
+        {
+            float vEffect = Convert.ToSingle(effect.v);
+            return vEffect < 0;
         }
 
         public static readonly Func<StructValue, StructValue, StructValue> S_FloatAdd_MergeOP = FloatAdd_MergeOP;
         public static readonly Func<StructValue, StructValue, StructValue> S_FloatSub_DiffOp = FloatSub_DiffOp;
         public static readonly Func<StructValue, StructValue, bool> S_FloatLessEqual_IsFulfilledByOP = FloatLessEqual_IsFulfilledByOP;
+        public static readonly Func<StructValue, StructValue, bool> S_FloatGreaterEqual_IsFulfilledByOP = FloatGreaterEqual_IsFulfilledByOP;
         public static readonly Func<StructValue, StructValue, StructValue, bool> S_FloatBigger_IsBetterOP = FloatBigger_IsBetterOP;
+        public static readonly Func<StructValue, StructValue, StructValue, bool> S_FloatSmaller_IsBetterOP = FloatSmaller_IsBetterOP;
 
         #endregion "Arithmetic OPs"
     }
