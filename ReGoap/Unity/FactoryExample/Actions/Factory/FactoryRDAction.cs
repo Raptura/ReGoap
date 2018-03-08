@@ -6,6 +6,7 @@ using ReGoap.Unity.FactoryExample.Planners;
 using System.Collections;
 using ReGoap.Unity.FactoryExample.OtherScripts;
 using ExtMethods;
+using MH;
 
 namespace ReGoap.Unity.FactoryExample.Actions
 {
@@ -77,7 +78,7 @@ namespace ReGoap.Unity.FactoryExample.Actions
 
             Info.Log(string.Format("Factory {0} is going to upgrade the feature {1}", _factory.name, FactoryMB.GetFeatureName(featIdx)));
 
-            yield return new WaitUntil( () => Input.anyKeyDown);
+            yield return new WaitForInput();
 
             _factory.UpgradeFeature(featIdx);
 

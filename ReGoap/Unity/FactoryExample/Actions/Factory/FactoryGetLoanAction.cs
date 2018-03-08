@@ -6,6 +6,7 @@ using System.Collections;
 using ReGoap.Unity.FactoryExample.Planners;
 using ReGoap.Unity.FactoryExample.OtherScripts;
 using ExtMethods;
+using MH;
 
 namespace ReGoap.Unity.FactoryExample.Actions
 { 
@@ -73,7 +74,7 @@ namespace ReGoap.Unity.FactoryExample.Actions
         {
             Info.Log(string.Format("Factory {0} is going to get {1} loan", _factory.name, FactoryMB.ONE_LOAN) );
 
-            yield return new WaitUntil( () => Input.anyKeyDown );
+            yield return new WaitForInput();
 
             _factory.GetLoan(FactoryMB.ONE_LOAN);
 

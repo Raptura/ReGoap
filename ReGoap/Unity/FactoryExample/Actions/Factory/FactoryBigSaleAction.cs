@@ -77,7 +77,7 @@ namespace ReGoap.Unity.FactoryExample.Actions
         {
             Info.Log(string.Format("Factory {0} starts a big sale...", _factory.name));
 
-            yield return new WaitUntil(()=>Input.anyKeyDown);
+            yield return new WaitForInput();
 
             foreach(var aStock in _factory.stocks)
             {
@@ -86,7 +86,7 @@ namespace ReGoap.Unity.FactoryExample.Actions
 
                 _factory.ModCash(halfPrice);
 
-                yield return new WaitUntil( () => Input.anyKeyDown);
+                yield return new WaitForInput();
             }
 
             doneCallback(this);

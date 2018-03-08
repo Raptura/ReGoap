@@ -6,6 +6,7 @@ using ExtMethods;
 using ReGoap.Unity.FactoryExample.Agents;
 using MH;
 using DG.Tweening;
+using UnityEngine.UI;
 
 using Random = UnityEngine.Random;
 
@@ -24,6 +25,8 @@ namespace ReGoap.Unity.FactoryExample.OtherScripts
         private GameObject _pfStock;
         [SerializeField][Tooltip("the position new stock is spawned")]
         private Transform _trStockSite;
+        [SerializeField][Tooltip("")]
+        private Text _lblBalance;
 
         [SerializeField][Tooltip("")]
         private int _cash;
@@ -47,16 +50,27 @@ namespace ReGoap.Unity.FactoryExample.OtherScripts
 
         public int currentStock { get { return _stocks.Count; } }
 
-
         private FactoryAgent _facAgent;
         public FactoryAgent agent {get{return _facAgent;}}
 
+        private Canvas _canvas;
+
+        private Transform _tr;
+
         void Awake()
         {
+            _tr = transform;
             _facAgent = this.AssertGetComponent<FactoryAgent>();
+            _canvas = this.AssertGetComponentInChildren<Canvas>();
 
             Dbg.CAssert(this, _pfStock != null, "FactoryMB.Awake: _pfStock not set");
             Dbg.CAssert(this, _trStockSite != null, "FactroyMB.Awake: _trStockSite not set");
+            Dbg.CAssert(this, _lblBalance != null, "FactoryMB.Awake : not set _lblBalance");
+        }
+
+        void Update()
+        {
+            _lblBalance.text = string.Format(" {0} / {1}", _cash, _loan);
         }
 
         public static string GetFeatureName(int idx)
@@ -96,6 +110,8 @@ namespace ReGoap.Unity.FactoryExample.OtherScripts
 
             ModCash(-cost);
 
+            _stocks.Add(stock);
+
             return stock;
         }
 
@@ -106,6 +122,8 @@ namespace ReGoap.Unity.FactoryExample.OtherScripts
         public void ModCash(int mod)
         {
             _cash += mod;
+
+            InfoPopText.Create(mod, _canvas.transform);
         }
 
         ///<summary>

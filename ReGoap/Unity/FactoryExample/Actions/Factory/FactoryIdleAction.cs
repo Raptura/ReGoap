@@ -54,7 +54,7 @@ namespace ReGoap.Unity.FactoryExample.Actions
         {
             Info.Log("FactoryIdleAction: Idling...");
 
-            yield return new WaitUntil( () => Input.anyKeyDown );
+            yield return new WaitForInput();
 
             doneCallback(this);
         }    

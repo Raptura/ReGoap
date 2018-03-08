@@ -59,7 +59,7 @@ namespace ReGoap.Unity.FactoryExample.OtherScripts
                 int interest = Mathf.RoundToInt(aFac.loan * 0.1f);
 
                 Info.Log(string.Format("Factory {0} pays interest {1}", aFac.name, interest) );
-                yield return new WaitUntil( () => Input.anyKeyDown );
+                yield return new WaitForInput();
 
                 aFac.ModCash(-interest);
             }
@@ -69,11 +69,12 @@ namespace ReGoap.Unity.FactoryExample.OtherScripts
             {
                 Info.Log($"Factory {aFac.name} is ready to move...");
 
-                yield return new WaitUntil( () => Input.anyKeyDown );
+                yield return new WaitForInput();
 
                 aFac.agent.DoPlan();
 
-                yield return new WaitUntil( () => aFac.agent.isIdle );
+                yield return new WaitForInput();
+    
             }
 
             // Customer make decisions
@@ -81,7 +82,7 @@ namespace ReGoap.Unity.FactoryExample.OtherScripts
             {
                 aCus.Act();
 
-                yield return new WaitForSeconds(2f);
+                // yield return new WaitForSeconds(2f);
             }
 
             _btnGO.interactable = true;

@@ -95,7 +95,7 @@ namespace ReGoap.Unity.FactoryExample.Actions
 
             Dbg.Log("{0} made new goods: price {1}, cost {2}, features: {3}", _factory.name, newStock.price, newStock.cost, Misc.ListToString(_featIdxLst));
 
-            yield return new WaitUntil( () => Input.anyKeyDown );
+            yield return new WaitForInput();
 
             doneCallback(this);
         }

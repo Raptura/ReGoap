@@ -6,6 +6,7 @@ using ReGoap.Core;
 using ReGoap.Unity.FactoryExample.OtherScripts;
 using ExtMethods;
 using ReGoap.Unity.FactoryExample.Planners;
+using MH;
 
 namespace ReGoap.Unity.FactoryExample.Actions
 {
@@ -71,7 +72,7 @@ namespace ReGoap.Unity.FactoryExample.Actions
         {
             Info.Log(string.Format("Factory {0} is going to payback a loan", _factory.name) );
 
-            yield return new WaitUntil( () => Input.anyKeyDown );
+            yield return new WaitForInput();
 
             _factory.PayLoan(FactoryMB.ONE_LOAN);
 

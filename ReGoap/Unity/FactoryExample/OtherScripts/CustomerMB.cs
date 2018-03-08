@@ -7,6 +7,7 @@ using MH;
 using DG.Tweening;
 
 using Random = UnityEngine.Random;
+using ReGoap.Unity.FactoryExample.Planners;
 
 namespace ReGoap.Unity.FactoryExample.OtherScripts
 {
@@ -100,12 +101,18 @@ namespace ReGoap.Unity.FactoryExample.OtherScripts
         {
             var toBuy = _FindBestStock();
             if( toBuy.v0 == null )
+            {
+                Info.Log($"{name} decides to not buy anything.");
                 return;
-
+            }
+            
             FactoryMB fac = toBuy.v0;
             Stock stock = toBuy.v1;
-            stock.tr.DOMove(_tr.position, 0.5f);
-            stock.tr.DOScale(Vector3.one * 0.1f, 0.5f).OnComplete( () => GameObject.Destroy(stock.gameObject));
+            Info.Log($"{name} decides to buy from {fac.name}");
+
+            fac.stocks.Remove(stock);
+            stock.tr.DOMove(_tr.position, 1.5f);
+            stock.tr.DOScale(Vector3.one * 0.3f, 1.5f).OnComplete( () => GameObject.Destroy(stock.gameObject));
 
             fac.ModCash(stock.price);
         }
