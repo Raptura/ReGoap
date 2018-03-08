@@ -19,14 +19,15 @@ namespace ReGoap.Unity
 
         protected float lastCalculationTime;
 
-        protected List<IReGoapGoal<T, W>> goals;
-        protected List<IReGoapAction<T, W>> actions;
+        protected List<IReGoapGoal<T, W>> goals = new List<IReGoapGoal<T, W>>();
+        protected List<IReGoapAction<T, W>> actions = new List<IReGoapAction<T, W>>();
         protected IReGoapMemory<T, W> memory;
         protected IReGoapGoal<T, W> currentGoal;
 
         protected ReGoapActionState<T, W> currentActionState;
 
         protected Dictionary<IReGoapGoal<T, W>, float> goalBlacklist;
+        protected List<IReGoapGoal<T, W>> reducedGoals = new List<IReGoapGoal<T, W>>(); //used to remove unnecessary GC alloc
         protected List<IReGoapGoal<T, W>> possibleGoals;
         protected bool possibleGoalsDirty;
         protected Queue<ReGoapActionState<T, W>> startingPlan;
@@ -35,15 +36,21 @@ namespace ReGoap.Unity
 
         protected bool startedPlanning;
         protected ReGoapPlanWork<T, W> currentReGoapPlanWorker;
+        protected Transform tr;
+
+        protected int _allowPlanToken = 0;
+
         public bool IsPlanning
         {
             get { return startedPlanning && currentReGoapPlanWorker.NewGoal == null; }
         }
         public bool debugPlan { get { return shouldDebugPlan; } set { shouldDebugPlan = value; } }
+        public int allowPlanToken { get{ return _allowPlanToken; } set{ _allowPlanToken = value; } }
 
         #region UnityFunctions
         protected virtual void Awake()
         {
+            tr = transform;
             lastCalculationTime = -100;
             goalBlacklist = new Dictionary<IReGoapGoal<T, W>, float>();
 
@@ -81,8 +88,11 @@ namespace ReGoap.Unity
             possibleGoalsDirty = false;
             if (goalBlacklist.Count > 0)
             {
-                possibleGoals = new List<IReGoapGoal<T, W>>(goals.Count);
+                possibleGoals = reducedGoals;
+                possibleGoals.Clear();
+
                 foreach (var goal in goals)
+                {
                     if (!goalBlacklist.ContainsKey(goal))
                     {
                         possibleGoals.Add(goal);
@@ -92,6 +102,7 @@ namespace ReGoap.Unity
                         goalBlacklist.Remove(goal);
                         possibleGoals.Add(goal);
                     }
+                }
             }
             else
             {
@@ -111,8 +122,16 @@ namespace ReGoap.Unity
         {
             if (IsPlanning)
                 return false;
-            if (!forceStart && (Time.time - lastCalculationTime <= CalculationDelay))
-                return false;
+            if (!forceStart )
+            {
+                if (Time.time - lastCalculationTime <= CalculationDelay)
+                    return false;
+                if( _allowPlanToken <= 0 )
+                    return false;
+
+                _allowPlanToken --;                
+            }
+
             lastCalculationTime = Time.time;
 
             interruptOnNextTransition = false;
@@ -278,13 +297,29 @@ namespace ReGoap.Unity
 
         public virtual void RefreshGoalsSet()
         {
-            goals = new List<IReGoapGoal<T, W>>(GetComponents<IReGoapGoal<T, W>>());
+            Transform trGoals;
+            if( null != (trGoals = tr.Find("REGOAP_GOALS")))
+            {
+                trGoals.GetComponentsInChildren(goals);
+            }
+            else
+            {
+                GetComponents(goals);
+            }
             possibleGoalsDirty = true;
         }
 
         public virtual void RefreshActionsSet()
         {
-            actions = new List<IReGoapAction<T, W>>(GetComponents<IReGoapAction<T, W>>());
+            Transform trActions;
+            if( null != (trActions = tr.Find("REGOAP_ACTIONS")))
+            {
+                trActions.GetComponentsInChildren(actions);
+            }
+            else
+            {
+                GetComponents(actions);
+            }
         }
 
         public virtual List<IReGoapGoal<T, W>> GetGoalsSet()

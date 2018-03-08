@@ -5,6 +5,9 @@ namespace ReGoap.Unity
 {
     public class ReGoapMemoryAdvanced<T, W> : ReGoapMemory<T, W>
     {
+        [SerializeField][Tooltip("")]
+        private bool _autoUpdateSensor = true;
+
         private IReGoapSensor<T, W>[] sensors;
 
         public float SensorsUpdateDelay = 0.3f;
@@ -23,14 +26,22 @@ namespace ReGoap.Unity
 
         protected virtual void Update()
         {
-            if (Time.time > sensorsUpdateCooldown)
+            if( _autoUpdateSensor )
             {
-                sensorsUpdateCooldown = Time.time + SensorsUpdateDelay;
-
-                foreach (var sensor in sensors)
+                if (Time.time > sensorsUpdateCooldown)
                 {
-                    sensor.UpdateSensor();
+                    UpdateSensors();
                 }
+            }
+        }
+
+        public void UpdateSensors()
+        {
+            sensorsUpdateCooldown = Time.time + SensorsUpdateDelay;
+
+            foreach (var sensor in sensors)
+            {
+                sensor.UpdateSensor();
             }
         }
         #endregion
