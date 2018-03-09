@@ -91,8 +91,6 @@ namespace ReGoap.Unity.FactoryExample.OtherScripts
             return totalCost;
         }
 
-        
-
         public Stock CreateNewStock(List<int> featureIdxs)
         {
             GameObject newStock = GameObject.Instantiate(_pfStock, _trStockSite.position + Vector3.up * 2f, Random.rotation);

@@ -8,6 +8,7 @@ using DG.Tweening;
 
 using Random = UnityEngine.Random;
 using ReGoap.Unity.FactoryExample.Planners;
+using ReGoap.Unity.FactoryExample.Strategy;
 
 namespace ReGoap.Unity.FactoryExample.OtherScripts
 {
@@ -40,6 +41,8 @@ namespace ReGoap.Unity.FactoryExample.OtherScripts
         private Transform _tr;
         public Transform tr { get{ return _tr; } set{ _tr = value; } }
 
+        private ICustomerStrategy _strategy = null;
+
         static CustomerMB()
         {
             IDX.AddRangeValue(0, 9);
@@ -68,38 +71,15 @@ namespace ReGoap.Unity.FactoryExample.OtherScripts
             _favoriteFeatures.Add(v);
         }
 
-        /// <summary>
-        /// might return null if don't want to buy
-        /// </summary>
-        private STuple<FactoryMB, Stock> _FindBestStock()
+        
+        public void ChangeStrategy()
         {
-            var ret = new STuple<FactoryMB, Stock>(null, null);
-            if (Random.value < _chanceToBuy)
-            {
-                float bestPricePerf = 0;
-                foreach (var aFac in FactoryMgr.Instance.allFactories)
-                {
-                    foreach (var aStock in aFac.stocks)
-                    {
-                        int price = aStock.price;
-                        int perceivedValue = _GetPerceivedValue(aStock);
-                        float newPricePerf = perceivedValue / (float)price;
-                        if (newPricePerf > bestPricePerf)
-                        {
-                            bestPricePerf = newPricePerf;
-                            ret.v0 = aFac;
-                            ret.v1 = aStock;
-                        }
-                    }
-                }
-            }
-
-            return ret;
+            
         }
-
+        
         public void Act()
         {
-            var toBuy = _FindBestStock();
+            var toBuy = _strategy.ChooseStock();
             if( toBuy.v0 == null )
             {
                 Info.Log($"{name} decides to not buy anything.");
@@ -122,7 +102,7 @@ namespace ReGoap.Unity.FactoryExample.OtherScripts
             return !_favoriteFeatures.Contains(x);
         }
 
-        private int _GetPerceivedValue(Stock aStock)
+        public int GetPerceivedValue(Stock aStock)
         {
             int totalValue = 0;
             var factories = FactoryMgr.Instance.allFactories;
