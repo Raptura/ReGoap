@@ -54,7 +54,7 @@ namespace ReGoap.Unity.FactoryExample.OtherScripts
             else
                 pf = FactoryMgr.Instance.pfSubCashText.gameObject;
 
-            GameObject newGO = PrefabPool.SpawnPrefab(pf, SpawnData.Create(parentTr.position, Quaternion.identity, parentTr, true));
+            GameObject newGO = PrefabPool.SpawnPrefab(pf, SpawnData.Create(parentTr.position, Quaternion.identity, parentTr));
             var newInfo = newGO.AssertGetComponent<InfoPopText>();
             newInfo._lblValue.text = newInfo._prefix + v.ToString();
 

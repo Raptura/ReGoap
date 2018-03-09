@@ -80,9 +80,14 @@ namespace ReGoap.Unity.FactoryExample.OtherScripts
             // Customer make decisions
             foreach(var aCus in allCustomers)
             {
+                var oldMat = aCus.GetMat();
+                aCus.SetMat(CustomerMgr.Instance.matThinking);
+
                 aCus.Act();
 
-                // yield return new WaitForSeconds(2f);
+                yield return new WaitForInput();
+
+                aCus.SetMat(oldMat);
             }
 
             _btnGO.interactable = true;

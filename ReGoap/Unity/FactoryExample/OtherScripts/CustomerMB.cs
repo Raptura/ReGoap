@@ -2,13 +2,14 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.UI;
 using ExtMethods;
+using ReGoap.Unity.FactoryExample.Planners;
+using ReGoap.Unity.FactoryExample.Strategy;
 using MH;
 using DG.Tweening;
 
 using Random = UnityEngine.Random;
-using ReGoap.Unity.FactoryExample.Planners;
-using ReGoap.Unity.FactoryExample.Strategy;
 
 namespace ReGoap.Unity.FactoryExample.OtherScripts
 {
@@ -30,6 +31,10 @@ namespace ReGoap.Unity.FactoryExample.OtherScripts
         private List<int> _addFavorValues = new List<int>();
         [SerializeField][Tooltip("from 1 to MAX_LEVEL, the standard perceived value for a feature")]
         private List<int> _standardValueOnLevel = new List<int>();
+        [SerializeField][Tooltip("")]
+        private Text _lblStrategy;
+        [SerializeField][Tooltip("")]
+        private Renderer _renderer;
 
         private List<int> _perceivedFeatureValues = new List<int>(); //cached calculate result
         
@@ -42,6 +47,9 @@ namespace ReGoap.Unity.FactoryExample.OtherScripts
         public Transform tr { get{ return _tr; } set{ _tr = value; } }
 
         private ICustomerStrategy _strategy = null;
+        public ICustomerStrategy strategy {get{return _strategy;}}
+
+        public List<int> favoriteFeatures { get{return _favoriteFeatures;} }
 
         static CustomerMB()
         {
@@ -60,8 +68,17 @@ namespace ReGoap.Unity.FactoryExample.OtherScripts
             IDX.RandomGetElem(_favoriteFeatures, _favorFeaturesCnt);
             _favoriteFeatures.ShuffleList();
 
+            Dbg.CAssert(this, _lblStrategy != null, "CustomerMB.Awake : not set _lblStrategy");
+            Dbg.CAssert(this, _renderer != null, "CustomerMB.Awake : not set _renderer");
             Dbg.CAssert(this, _standardValueOnLevel.Count == FactoryMB.MAX_RD_LEVEL, "CustomerMB.Awake: _standardValueOnLevel.Count = {0}, expected {1}", _standardValueOnLevel.Count, FactoryMB.MAX_RD_LEVEL);
             Dbg.CAssert(this, _addFavorValues.Count == _favorFeaturesCnt, "CustomerMB.Awake: _addFavorValues.Count == {0}, expected {1}", _addFavorValues.Count, _favorFeaturesCnt);
+
+            ChangeStrategy();
+        }
+
+        void LateUpdate()
+        {
+            _lblStrategy.text = _strategy?.GetType().Name ?? "No Strategy Yet";
         }
 
         public void UpdateFavorList()
@@ -70,11 +87,18 @@ namespace ReGoap.Unity.FactoryExample.OtherScripts
             int v = IDX.RandomGetElem(D_NotInFavorList);
             _favoriteFeatures.Add(v);
         }
-
         
+        private static readonly List<Func< CustomerMB, ICustomerStrategy >> _strategyGenerators = new List<Func<CustomerMB, ICustomerStrategy>>() 
+            { StrategyMaxUtil.Create, StrategyRandom.Create, StrategyLowestPrice.Create };
         public void ChangeStrategy()
         {
-            
+            if( _strategy != null )
+            {
+                _strategy.Release();
+                _strategy = null;
+            }
+
+            _strategy = _strategyGenerators.RandomGetElem()(this);
         }
         
         public void Act()
@@ -95,7 +119,12 @@ namespace ReGoap.Unity.FactoryExample.OtherScripts
             stock.tr.DOScale(Vector3.one * 0.3f, 1.5f).OnComplete( () => GameObject.Destroy(stock.gameObject));
 
             fac.ModCash(stock.price);
+
+            ChangeStrategy();
         }
+
+        public void SetMat(Material m) { _renderer.sharedMaterial = m;}
+        public Material GetMat() {return _renderer.sharedMaterial;}
 
         private bool _NotInFavorList(int x)
         {

@@ -7,6 +7,7 @@ using ExtMethods;
 using System.Collections;
 using ReGoap.Unity.FactoryExample.OtherScripts;
 using UnityEngine;
+using DG.Tweening;
 
 namespace ReGoap.Unity.FactoryExample.Actions
 {
@@ -85,6 +86,9 @@ namespace ReGoap.Unity.FactoryExample.Actions
                 Info.Log(string.Format("Factory {0} sells stock with reduced price: {1}", _factory.name, halfPrice));
 
                 _factory.ModCash(halfPrice);
+                
+                _factory.stocks.Remove(aStock);
+                aStock.tr.DOScale(Vector3.one * 0.3f, 1.5f).OnComplete( () => GameObject.Destroy(aStock.gameObject));
 
                 yield return new WaitForInput();
             }
