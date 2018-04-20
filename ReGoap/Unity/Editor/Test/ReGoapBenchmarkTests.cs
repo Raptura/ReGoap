@@ -42,7 +42,7 @@ namespace ReGoap.Unity.Editor.Test
             return watch.Elapsed.TotalMilliseconds;
         }
 
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public void Init()
         {
             tests = new ReGoapTests();

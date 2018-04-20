@@ -146,7 +146,7 @@ namespace ReGoap.Unity.Editor.Test
                 new Dictionary<string, object> { { "IntGold", 5 }, { "IntFood", -1} },
                 5);
 
-            var miningGoal = ReGoapTestsHelper.GetCustomGoal(gameObject, "GetGold",
+            ReGoapTestsHelper.GetCustomGoal(gameObject, "GetGold",
                 new Dictionary<string, object> { { "IntGold", 30 } });
 
             var memory = gameObject.AddComponent<ReGoapTestMemory>();
@@ -180,7 +180,7 @@ namespace ReGoap.Unity.Editor.Test
                 new Dictionary<string, object> { { "IntGold", 5 }, { "IntFood", -1 } },
                 5);
 
-            var miningGoal = ReGoapTestsHelper.GetCustomGoal(gameObject, "GetGold",
+            ReGoapTestsHelper.GetCustomGoal(gameObject, "GetGold",
                 new Dictionary<string, object> { { "IntGold", 30 } });
 
             var memory = gameObject.AddComponent<ReGoapTestMemory>();

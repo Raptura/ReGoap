@@ -289,10 +289,12 @@ public class ReGoapNodeBaseEditor : EditorWindow
 
         var lockNodePosition = new Vector2(0f, 0f);
 
-        var lockNode = DrawGenericNode("<b>LOCK AGENT</b>", 110f, 40f, agentLocked ? selectedMenuNodeStyle : menuNodeStyle, ref lockNodePosition, false, OnLockEvent);
+        // var lockNode = 
+        DrawGenericNode("<b>LOCK AGENT</b>", 110f, 40f, agentLocked ? selectedMenuNodeStyle : menuNodeStyle, ref lockNodePosition, false, OnLockEvent);
 
         var agentInfoTitle = string.Format("<b>Selected agent:</b> {0}: {1}", agentHelper, ((MonoBehaviour)agentHelper).name);
-        var agentInfoNode = DrawGenericNode(agentInfoTitle, agentInfoTitle.Length * 6f, 40f, menuNodeStyle, ref lockNodePosition);
+        // var agentInfoNode = 
+        DrawGenericNode(agentInfoTitle, agentInfoTitle.Length * 6f, 40f, menuNodeStyle, ref lockNodePosition);
     }
 
     private void OnLockEvent(ReGoapNodeEditor node, Event e)
