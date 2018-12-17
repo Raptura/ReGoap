@@ -7,7 +7,7 @@
 //     the code is regenerated.
 // </auto-generated>
 // ------------------------------------------------------------------------------
-namespace Assets.ReGoap.Planner
+namespace ReGoap.Planner
 {
     using System.Linq;
     using System.Text;

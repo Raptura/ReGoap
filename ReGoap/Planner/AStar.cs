@@ -29,13 +29,13 @@ namespace ReGoap.Planner
         }
 
         private bool _debugPlan = false;
-        private Assets.ReGoap.Planner.PlanDebugger _debugger;
+        private PlanDebugger _debugger;
 
         private void _DebugPlan(INode<T> node, INode<T> parent)
         {
             if (!_debugPlan) return;
             if (null == _debugger)
-                _debugger = new Assets.ReGoap.Planner.PlanDebugger();
+                _debugger = new PlanDebugger();
 
             string nodeStr = string.Format("{0} [label=\"GOAL({4}): {5}:\n{1}\nEFFECT:\n{2}\nPRECOND:\n{3}\n\"]", node.GetHashCode(), node.GoalString, node.EffectString, node.PrecondString, node.GetCost(), node.Name);
             _debugger.AddNode(nodeStr);
