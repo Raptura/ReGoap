@@ -1,4 +1,5 @@
-﻿using ReGoap.Core;
+﻿using System.Collections.Generic;
+using ReGoap.Core;
 using UnityEngine;
 
 namespace ReGoap.Unity
@@ -8,7 +9,7 @@ namespace ReGoap.Unity
         [SerializeField][Tooltip("")]
         private bool _autoUpdateSensor = true;
 
-        private IReGoapSensor<T, W>[] sensors;
+        private List<IReGoapSensor<T, W>> sensors = new List<IReGoapSensor<T, W>>();
 
         public float SensorsUpdateDelay = 0.3f;
         private float sensorsUpdateCooldown;
@@ -17,7 +18,7 @@ namespace ReGoap.Unity
         protected override void Awake()
         {
             base.Awake();
-            sensors = GetComponents<IReGoapSensor<T, W>>();
+            GetComponents<IReGoapSensor<T, W>>(sensors);
             foreach (var sensor in sensors)
             {
                 sensor.Init(this);
